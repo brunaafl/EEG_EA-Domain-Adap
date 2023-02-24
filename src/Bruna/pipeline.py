@@ -5,6 +5,7 @@ from numpy import unique
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
 from alignment import euclidean_alignment
+from dataset import split_runs_EA
 
 
 class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
@@ -19,7 +20,9 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
 
         # parameter that indicates the necessity of EA
-        X_EA = euclidean_alignment(X.get_data())
+        # If dataset BNCI2014001 : runs per class (rpc) = 12 and classes = 2
+        # Else (dataset PhysionetMI) : runs per class (rpc) = 3 and classes = 2
+        X_EA = split_runs_EA(X.get_data(), 12, 2)
 
         dataset = create_from_X_y(
             X=X_EA,

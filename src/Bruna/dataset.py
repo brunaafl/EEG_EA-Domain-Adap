@@ -2,6 +2,7 @@ import copy
 import pickle
 
 from numpy import multiply
+import numpy as np
 
 from braindecode.datasets import MOABBDataset, create_from_X_y, BaseConcatDataset
 from braindecode.preprocessing import (
@@ -20,6 +21,7 @@ from moabb.utils import set_download_dir
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from model_validation import split_train_val, split_run, split_size
+from alignment import euclidean_alignment
 
 mne.set_log_level("ERROR")
 
@@ -167,3 +169,15 @@ def ft_test_data(test_subj, subject_ids, run, Data_subjects):
     Data_run_T = split_run(Test_T, run)
     Test_runs = split_size(Data_run_T, run)
     return Test_runs, Test_T, Test_E
+
+
+def split_runs_EA(X, rpc, n_classes):
+    X_aux = []
+    m = rpc * n_classes
+    n = X.shape[0]
+    for k in range(int(n / m)):
+        run = X[k * m:(k + 1) * m]
+        run_EA = euclidean_alignment(run)
+        X_aux.append(run_EA)
+    X_EA = np.concatenate(X_aux)
+    return X_EA
