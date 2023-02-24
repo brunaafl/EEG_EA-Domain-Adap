@@ -25,7 +25,7 @@ from moabb.utils import set_download_dir
 from sklearn.pipeline import Pipeline
 
 from train import init_model, define_clf
-from pipeline import TransformaParaWindowsDataset, ClassifierModel
+from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA, ClassifierModel
 from util import parse_args
 
 

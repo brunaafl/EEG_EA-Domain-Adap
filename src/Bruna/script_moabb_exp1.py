@@ -25,7 +25,7 @@ from moabb.utils import set_download_dir
 from sklearn.pipeline import Pipeline
 
 from train import init_model, define_clf
-from pipeline import TransformaParaWindowsDataset, ClassifierModel
+from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA, ClassifierModel
 from util import parse_args
 
 
@@ -34,7 +34,7 @@ For the joint model
 """
 
 
-def main(dataset_type='BNCI2014001'):
+def main(dataset_type='BNCI2014001', alignment=False):
     """
 
     Parameters
@@ -82,7 +82,11 @@ def main(dataset_type='BNCI2014001'):
     clf = define_clf(model, device)
 
     # Create pipeline
-    create_dataset = TransformaParaWindowsDataset()
+    if alignment:
+        create_dataset = TransformaParaWindowsDatasetEA()
+    else:
+        create_dataset = TransformaParaWindowsDataset()
+
     fit_params = {"epochs": 200}
     brain_clf = ClassifierModel(clf, fit_params)
     pipe = Pipeline([("Braindecode_dataset", create_dataset),

@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 Vector = Union[list, tuple, np.ndarray]
 
 
-class WithinSubjectEvaluation(BaseEvaluation):
+class CrossCrossSubjectEvaluation(BaseEvaluation):
     """
     Temporary name!
     I want to create the evaluation that I did in the experiment 4. For this, I created one
@@ -66,14 +66,9 @@ class WithinSubjectEvaluation(BaseEvaluation):
             run_pipes.update(self.results.not_yet_computed(pipelines, dataset, subject))
         if len(run_pipes) != 0:
 
-            print('a')
-
             # get the data
-            X, y, metadata = self.paradigm.get_data(
-                dataset, return_epochs=self.return_epochs
-            )
-
-            print('a')
+            X, y, metadata = self.paradigm.get_data(dataset,
+                                                    return_epochs=self.return_epochs)
 
             # encode labels
             le = LabelEncoder()
@@ -92,26 +87,21 @@ class WithinSubjectEvaluation(BaseEvaluation):
             for test, train in tqdm(
                 cv.split(X, y, groups),
                 total=n_subjects,
-                desc=f"{dataset.code}-WithinSubject",
-            ):
+                desc=f"{dataset.code}-WithinSubject"):
 
-                print('a')
+                #aux = np.unique(groups[test])
+                #subj_0 = aux[0]
+                run_pipes = self.results.not_yet_computed(pipelines, dataset, train[0])
 
-                subject = groups[test]
-                # now we can check if this subject has results
-                run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
-
-                print('a')
-
-                # iterate over pipelines
                 for name, clf in run_pipes.items():
                     t_start = time()
                     model = deepcopy(clf).fit(X[train], y[train])
                     duration = time() - t_start
-                    print('a')
-                    # we eval on each subject
-                    for subj in np.unique(groups[test]):
-                        ix = groups[test] == subj
+
+                    # for each test subject
+                    for subject in np.unique(groups[test]):
+                        # Now evaluate
+                        ix = groups[test] == subject
                         score = _score(model, X[test[ix]], y[test[ix]], scorer)
 
                         nchan = (
@@ -120,7 +110,7 @@ class WithinSubjectEvaluation(BaseEvaluation):
                         res = {
                             "time": duration,
                             "dataset": dataset,
-                            "subject": subj,
+                            "subject": subject,
                             #"session": session,
                             "score": score,
                             "n_samples": len(train),
@@ -129,7 +119,6 @@ class WithinSubjectEvaluation(BaseEvaluation):
                         }
 
                         yield res
-
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1

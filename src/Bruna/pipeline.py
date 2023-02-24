@@ -42,6 +42,33 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
         return True
 
 
+class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
+    def __init__(self, kw_args=None):
+        self.kw_args = kw_args
+
+    def fit(self, X, y=None):
+        self.y = y
+        # self.X = euclidean_alignment(X.get_data())
+        return self
+
+    def transform(self, X, y=None ):
+
+        X_EA = split_runs(X.get_data(), 12, 2)
+
+        dataset = create_from_X_y(
+            X=X_EA,
+            y=self.y,
+            window_size_samples=X.get_data().shape[2],
+            window_stride_samples=X.get_data().shape[2],
+            drop_last_window=False,
+            sfreq=X.info["sfreq"],
+        )
+
+        # dataset_EA = preprocess(dataset,[Preprocessor(euclidean_alignment,apply_on_array=True)])
+
+        return dataset
+
+
 class ClassifierModel(BaseEstimator, ClassifierMixin):
     def __init__(self, clf, kw_args=None):
         self.clf = clf
