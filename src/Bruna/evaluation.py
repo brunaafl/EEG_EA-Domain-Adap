@@ -6,7 +6,7 @@ from typing import Union
 import numpy as np
 from mne.epochs import BaseEpochs
 from sklearn.metrics import get_scorer
-from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import LeaveOneGroupOut
 
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
@@ -82,16 +82,16 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
             scorer = get_scorer(self.paradigm.scoring)
 
             # perform leave one subject out CV
-            cv = LeaveOneOut()
+            cv = LeaveOneGroupOut()
             # Progressbar at subject level
             for test, train in tqdm(
                 cv.split(X, y, groups),
                 total=n_subjects,
-                desc=f"{dataset.code}-WithinSubject"):
+                desc=f"{dataset.code}-CrossCrossSubject"):
 
                 #aux = np.unique(groups[test])
                 #subj_0 = aux[0]
-                run_pipes = self.results.not_yet_computed(pipelines, dataset, train[0])
+                run_pipes = self.results.not_yet_computed(pipelines, dataset, groups[train[0]])
 
                 for name, clf in run_pipes.items():
                     t_start = time()
@@ -103,7 +103,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
                         # Now evaluate
                         ix = groups[test] == subject
                         score = _score(model, X[test[ix]], y[test[ix]], scorer)
-
+                        session = 'both'
                         nchan = (
                             X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                         )
@@ -111,7 +111,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
                             "time": duration,
                             "dataset": dataset,
                             "subject": subject,
-                            #"session": session,
+                            "session": session,
                             "score": score,
                             "n_samples": len(train),
                             "n_channels": nchan,
