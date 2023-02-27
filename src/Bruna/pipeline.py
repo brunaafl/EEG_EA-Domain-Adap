@@ -18,7 +18,6 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-
         # parameter that indicates the necessity of EA
         # If dataset BNCI2014001 : runs per class (rpc) = 12 and classes = 2
         # Else (dataset PhysionetMI) : runs per class (rpc) = 3 and classes = 2
@@ -51,9 +50,8 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
         # self.X = euclidean_alignment(X.get_data())
         return self
 
-    def transform(self, X, y=None ):
-
-        X_EA = split_runs(X.get_data(), 12, 2)
+    def transform(self, X, y=None):
+        X_EA = split_runs_EA(X.get_data(), 12, 2)
 
         dataset = create_from_X_y(
             X=X_EA,

@@ -110,36 +110,7 @@ def read_data(config, dataset_name="BNCI2014001", subject_ids=None):
     else:
         dataset = PhysionetMI(imagined=True)
 
-
-class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
-    def __init__(self, kw_args=None):
-        self.y = None
-        self.kw_args = kw_args
-
-    # didn't understand what is defined as X and y. Is ti the BNCI2014001()?
-    def fit(self, X, y=None):
-        self.y = y
-        return self
-
-    def transform(self, X, y=None):
-        X = X.get_data()
-        # TODO : define the EA transformation
-        # X_alinhado = euclian_ali(X)
-
-        dataset = create_from_X_y(
-            X=X,
-            y=self.y,
-            window_size_samples=X.get_data().shape[2],
-            window_stride_samples=X.get_data().shape[2],
-            drop_last_window=False,
-            sfreq=X.info["sfreq"],
-        )
-
-        return dataset
-
-    def __sklearn_is_fitted__(self):
-        """Return True since Transfomer is stateless."""
-        return True
+    return dataset
 
 
 def create_ft_dataset(Train, Test_runs):
