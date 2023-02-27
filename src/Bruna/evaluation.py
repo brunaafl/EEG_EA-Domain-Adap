@@ -84,19 +84,21 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
             # perform leave one subject out CV
             cv = LeaveOneGroupOut()
             # Progressbar at subject level
+            model_list = []
             for test, train in tqdm(
-                cv.split(X, y, groups),
-                total=n_subjects,
-                desc=f"{dataset.code}-CrossCrossSubject"):
+                    cv.split(X, y, groups),
+                    total=n_subjects,
+                    desc=f"{dataset.code}-CrossCrossSubject"):
 
-                #aux = np.unique(groups[test])
-                #subj_0 = aux[0]
+                # aux = np.unique(groups[test])
+                # subj_0 = aux[0]
                 run_pipes = self.results.not_yet_computed(pipelines, dataset, groups[train[0]])
 
                 for name, clf in run_pipes.items():
                     t_start = time()
                     model = deepcopy(clf).fit(X[train], y[train])
                     duration = time() - t_start
+                    model_list.append(model)
 
                     # for each test subject
                     for subject in np.unique(groups[test]):
@@ -110,7 +112,8 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
                         res = {
                             "time": duration,
                             "dataset": dataset,
-                            "subject": subject,
+                            "subject": groups[train[0]],
+                            "test": subject,
                             "session": session,
                             "score": score,
                             "n_samples": len(train),
@@ -122,3 +125,17 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
+
+
+def add_test_column(dataset, results):
+    subj_list = dataset.subject_list
+    list_ = []
+    for i in subj_list:
+        subj_copy = deepcopy(subj_list)
+        subj_copy.remove(i)
+        list_.append(subj_copy)
+
+    array = np.array(list_)
+    test = array.flatten()
+    results.insert(4, 'test', test, True)
+    return results

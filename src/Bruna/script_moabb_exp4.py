@@ -27,6 +27,7 @@ from sklearn.pipeline import Pipeline
 from train import init_model, define_clf
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA, ClassifierModel
 from util import parse_args
+from evaluation import CrossCrossSubjectEvaluation, add_test_column
 
 
 """
@@ -34,12 +35,13 @@ For the joint model
 """
 
 
-def main(dataset_type='BNCI2014001'):
+def main(dataset_type='BNCI2014001', alignment=False):
     """
 
     Parameters
     ----------
     args : object
+    :param alignment:
     :param dataset_type:
     """
 
@@ -82,7 +84,10 @@ def main(dataset_type='BNCI2014001'):
     clf = define_clf(model, device)
 
     # Create pipeline
-    create_dataset = TransformaParaWindowsDataset()
+    if alignment:
+        create_dataset = TransformaParaWindowsDatasetEA()
+    else:
+        create_dataset = TransformaParaWindowsDataset()
     fit_params = {"epochs": 200}
     brain_clf = ClassifierModel(clf, fit_params)
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
@@ -91,16 +96,17 @@ def main(dataset_type='BNCI2014001'):
 
     # Define evaluation and train
     overwrite = True  # set to True if we want to overwrite cached results
-    # The ONLT difference is going to be on the evaluation
-    evaluation = CrossSubjectEvaluation(
+    # The ONLY difference is going to be on the evaluation
+    evaluation = CrossCrossSubjectEvaluation(
         paradigm=paradigm,
         datasets=datasets,
-        suffix="experiment_1",
+        suffix="experiment_4",
         overwrite=overwrite,
         return_epochs=True,
     )
 
     results = evaluation.process(pipes)
+    results = add_test_column(datasets[0], results)
     print(results.head())
 
     print("---------------------------------------")
