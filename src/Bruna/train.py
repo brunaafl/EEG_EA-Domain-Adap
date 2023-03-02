@@ -140,8 +140,8 @@ def init_model(n_chans, n_classes, input_window_samples):
         n_chans,
         n_classes,
         input_window_samples=input_window_samples,
-        final_conv_length='auto',
-        drop_prob=0.5
+        final_conv_length=config.model.final_conv_length,
+        drop_prob=config.model.drop_prob
     )
     return model
 
