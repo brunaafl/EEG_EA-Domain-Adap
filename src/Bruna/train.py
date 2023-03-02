@@ -135,7 +135,7 @@ def train_func(model, Train_data, Test_data, Val_data, device):
     return clf, bac
 
 
-def init_model(n_chans, n_classes, input_window_samples):
+def init_model(n_chans, n_classes, input_window_samples, config):
     model = EEGNetv4(
         n_chans,
         n_classes,
@@ -159,7 +159,7 @@ def fine_tuning(model, device, subj, Test, Train_test):
 
         clf_fine_tune = EEGClassifier(
             module=copy.deepcopy(model),
-            train_split=None, # predefined_split(val_set)
+            train_split=None,  # predefined_split(val_set)
             callbacks=[
                 "accuracy", ("lr_scheduler",
                              LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
@@ -188,4 +188,3 @@ def fine_tuning(model, device, subj, Test, Train_test):
         print(f"  bac = {bac2}")
 
         return bac_runs
-
