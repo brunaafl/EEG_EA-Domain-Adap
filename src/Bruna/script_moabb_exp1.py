@@ -4,27 +4,17 @@ Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 
 """
-import os.path as osp
 
-import matplotlib.pyplot as plt
-import mne
 import torch
-import copy
-
-from braindecode.datasets import create_from_X_y
-from braindecode.util import set_random_seeds
-
 from moabb.datasets import BNCI2014001, PhysionetMI
 from moabb.evaluations import CrossSubjectEvaluation
-from moabb.paradigms import LeftRightImagery
-from moabb.utils import set_download_dir
-
+from moabb.paradigms import MotorImagery
+from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 
-from train import init_model, define_clf
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA, ClassifierModel
-from util import parse_args
-
+from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
+from train import define_clf, init_model
+from util import parse_args, set_determinism, set_run_dir
 
 """
 For the joint model
