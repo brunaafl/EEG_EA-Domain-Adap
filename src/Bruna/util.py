@@ -205,9 +205,11 @@ def starting_mlflow(config, args, baseline=False, model_name="", task=""):
         )
     else:
         experiment_name = (
-                config.train.experiment_name
+                args.num_exp
                 + "-"
                 + str(args.dataset)
+                + '-'
+                + str(args.aligment)
         )
 
     mlflow.set_experiment(experiment_name)
@@ -274,5 +276,3 @@ def log_mlflow(active_run, model, run_report, config, args, split_ids):
             print(f"Error {ex}, ignore if train option.")
 
             print("log the model fail in option 1, works in option 2.")
-
-
