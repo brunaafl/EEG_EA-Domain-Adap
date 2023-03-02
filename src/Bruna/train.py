@@ -49,24 +49,39 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
     return clf
 
 
-def define_clf(model, device):
-    weight_decay = 0
-    batch_size = 64
-    n_epochs = 300
-    lr = 0.0625 * 0.01
-    patience = 50
+def define_clf(model, config):
+    """
+    Transform the pytorch model into classifier object to be used in the training
+    Parameters
+    ----------
+    model: pytorch model
+    device: cuda or cpu
+    config: dict with the configuration parameters
+
+    Returns
+    -------
+    clf: skorch classifier
+
+    """
+    weight_decay = config.train.weight_decay
+    batch_size = config.train.batch_size
+    lr = config.train.lr
+    patience = config.patience
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
         optimizer=torch.optim.AdamW,
-        train_split=ValidSplit(0.20),  # using valid_set for validation
+        train_split=ValidSplit(config.train.valid_split),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc', lower_is_better=False)],
+                   EpochScoring(scoring='accuracy', on_train=True,
+                                name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False,
+                                name='valid_acc', lower_is_better=False)],
         device=device,
         verbose=1,
     )
