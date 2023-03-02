@@ -10,6 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from moabb.utils import set_download_dir
+
 import argparse
 import random
 import warnings
@@ -138,16 +140,23 @@ def set_run_dir(config, args):
     Name of the experiment.
 
     """
+    print("Changing the path download dir")
+
+    set_download_dir(config.dataset.path)
+
     output_dir = Path(config.train.run_report + "/runs/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
     experiment_name = (
-            config.train.experiment_name
+            args.num_exp
             + "-"
             + str(args.dataset)
+            + '-'
+            + str(args.aligment)
     )
 
-    run_dir = output_dir / (experiment_name)
+    run_dir = output_dir / experiment_name
+
     print(f"The run_dir is {run_dir}")
     if run_dir.exists() and (run_dir / "checkpoint.pth").exists():
         pass
