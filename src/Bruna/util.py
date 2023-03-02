@@ -111,13 +111,28 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--data",
+        "--aligment",
         type=str,
         help="select if the data will be have alignment or not.",
         default="no_alignment",
         choices=["no_alignment", "alignment"],
     )
 
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        help="select the dataset to be used on the analyse.",
+        default="BNCI2014001",
+        choices=["BNCI2014001", "PhysionetMI"],
+    )
+
+    parser.add_argument(
+        "--num_exp",
+        type=str,
+        help="select which experiment we gonna run.",
+        default="exp_1",
+        choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"],
+    )
     args = parser.parse_args()
     return args
 
