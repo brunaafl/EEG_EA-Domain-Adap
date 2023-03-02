@@ -1,0 +1,5 @@
+#%Module1.0
+module-whatis "Moobb Python module"
+prepend-path PATH /mnt/beegfs/home/chevallier/miniconda3/envs/ensemble-transf-eeg/bin/python
+setenv PYTHONPATH /mnt/beegfs/home/chevallier/miniconda3/envs/ensemble-transf-eeg/lib/python3.10/site-packages
+
