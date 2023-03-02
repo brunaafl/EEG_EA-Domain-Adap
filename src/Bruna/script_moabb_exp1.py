@@ -37,13 +37,6 @@ def main(args):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
-    device = "cuda" if cuda else "cpu"
-    if cuda:
-        torch.backends.cudnn.benchmark = True
-    seed = 20200220  # random seed to make results reproducible
-    # Set random seed to be able to reproduce results
-    set_random_seeds(seed=seed, cuda=cuda)
-
     # Define paradigm and datasets
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
