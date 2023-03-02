@@ -8,17 +8,14 @@ import os.path as osp
 
 import matplotlib.pyplot as plt
 import mne
-import seaborn as sns
 import torch
 import copy
 
-from braindecode import EEGClassifier
 from braindecode.datasets import create_from_X_y
-from braindecode.models import ShallowFBCSPNet, EEGNetv4
 from braindecode.util import set_random_seeds
 
 from moabb.datasets import BNCI2014001, PhysionetMI
-from moabb.evaluations import WithinSessionEvaluation, CrossSubjectEvaluation
+from moabb.evaluations import CrossSubjectEvaluation
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
