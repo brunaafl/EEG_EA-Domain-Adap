@@ -44,6 +44,8 @@ def main(args):
         n_chans = 22
         input_window_samples = 1001
         rpc = 12
+        events = ["right_hand", "left_hand"]
+        n_classes = len(events)
 
     else:
         dataset = PhysionetMI(imagined=True)
@@ -51,6 +53,10 @@ def main(args):
         n_chans = 64
         input_window_samples = 481
         rpc = 6
+        events = ["left_hand", "right_hand"]
+        n_classes = len(events)
+
+    paradigm = MotorImagery(events=events, n_classes=len(events))
 
     model = init_model(n_chans, n_classes, input_window_samples)
     # Send model to GPU
