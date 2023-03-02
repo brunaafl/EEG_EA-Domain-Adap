@@ -21,13 +21,12 @@ For the joint model
 """
 
 
-def main(dataset_type='BNCI2014001', alignment=False):
+def main(args):
     """
 
     Parameters
     ----------
     args : object
-    :param dataset_type:
     """
     config = OmegaConf.load(args.config_file)
     # Setting run information
@@ -46,10 +45,7 @@ def main(dataset_type='BNCI2014001', alignment=False):
     set_random_seeds(seed=seed, cuda=cuda)
 
     # Define paradigm and datasets
-    paradigm = LeftRightImagery()
-    n_classes = 2
-
-    if dataset_type == 'BNCI2014001':
+    if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
         datasets = [dataset]
         n_chans = 22
@@ -69,10 +65,10 @@ def main(dataset_type='BNCI2014001', alignment=False):
         model.cuda()
 
     # Create Classifier
-    clf = define_clf(model, device)
+    clf = define_clf(model, config)
 
     # Create pipeline
-    if alignment:
+    if args.alignment == 'aligment':
         create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
     else:
         create_dataset = TransformaParaWindowsDataset()
