@@ -18,13 +18,9 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        # parameter that indicates the necessity of EA
-        # If dataset BNCI2014001 : runs per class (rpc) = 12 and classes = 2
-        # Else (dataset PhysionetMI) : runs per class (rpc) = 3 and classes = 2
-        X_EA = split_runs_EA(X.get_data(), 12, 2)
 
         dataset = create_from_X_y(
-            X=X_EA,
+            X=X.get_data(),
             y=self.y,
             window_size_samples=X.get_data().shape[2],
             window_stride_samples=X.get_data().shape[2],
@@ -42,16 +38,17 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
 
 class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
-    def __init__(self, kw_args=None):
+    def __init__(self, rpc, n_class, kw_args=None):
         self.kw_args = kw_args
+        self.rpc = rpc
+        self.n_class = n_class
 
     def fit(self, X, y=None):
         self.y = y
-        # self.X = euclidean_alignment(X.get_data())
         return self
 
     def transform(self, X, y=None):
-        X_EA = split_runs_EA(X.get_data(), 12, 2)
+        X_EA = split_runs_EA(X.get_data(), self.rpc, self.n_class)
 
         dataset = create_from_X_y(
             X=X_EA,
@@ -62,9 +59,11 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
             sfreq=X.info["sfreq"],
         )
 
-        # dataset_EA = preprocess(dataset,[Preprocessor(euclidean_alignment,apply_on_array=True)])
-
         return dataset
+
+    def __sklearn_is_fitted__(self):
+        """Return True since Transfomer is stateless."""
+        return True
 
 
 class ClassifierModel(BaseEstimator, ClassifierMixin):
