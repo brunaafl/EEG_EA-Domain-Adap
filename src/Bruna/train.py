@@ -2,13 +2,12 @@ from braindecode import EEGClassifier
 from braindecode.datasets import BaseConcatDataset
 from braindecode.models import EEGNetv4
 from distributed.protocol import torch
-from skorch.callbacks import LRScheduler
+from skorch.callbacks import LRScheduler, EarlyStopping, EpochScoring
 from skorch.helper import predefined_split, SliceDataset
 from sklearn.base import clone
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import roc_auc_score, balanced_accuracy_score
-from model_validation import split_train_val
-from sklearn.base import BaseEstimator, ClassifierMixin
+from skorch.dataset import ValidSplit
 import copy
 from numpy import unique
 
@@ -52,24 +51,24 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
 def define_clf(model, device):
     weight_decay = 0
     batch_size = 64
-    n_epochs = 100
+    n_epochs = 300
     lr = 0.0625 * 0.01
+    patience = 50
 
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
         optimizer=torch.optim.AdamW,
-        train_split=None,  # using valid_set for validation
+        train_split=ValidSplit(0.20),  # using valid_set for validation
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
-        callbacks=[
-            "accuracy",
-            ("lr_scheduler", LRScheduler("CosineAnnealingLR", T_max=n_epochs - 1)),
-        ],
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc', lower_is_better=False)],
         device=device,
+        verbose=1,
     )
-
     return clf
 
 

@@ -6,15 +6,9 @@ Baseline script to analyse the EEG Dataset.
 """
 import os.path as osp
 
-import matplotlib.pyplot as plt
-import mne
-import seaborn as sns
 import torch
 import copy
 
-from braindecode import EEGClassifier
-from braindecode.datasets import create_from_X_y
-from braindecode.models import ShallowFBCSPNet, EEGNetv4
 from braindecode.util import set_random_seeds
 
 from moabb.datasets import BNCI2014001, PhysionetMI
@@ -68,12 +62,14 @@ def main(dataset_type='BNCI2014001', alignment=False):
         datasets = [dataset]
         n_chans = 22
         input_window_samples = 1001
+        rpc = 12
 
     else:
         dataset = PhysionetMI(imagined=True)
         datasets = [dataset]
         n_chans = 64
         input_window_samples = 481
+        rpc = 6
 
     model = init_model(n_chans, n_classes, input_window_samples)
     # Send model to GPU
@@ -85,7 +81,7 @@ def main(dataset_type='BNCI2014001', alignment=False):
 
     # Create pipeline
     if alignment:
-        create_dataset = TransformaParaWindowsDatasetEA()
+        create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
     else:
         create_dataset = TransformaParaWindowsDataset()
     fit_params = {"epochs": 200}

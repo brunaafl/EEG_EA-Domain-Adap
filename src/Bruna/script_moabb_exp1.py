@@ -61,17 +61,18 @@ def main(dataset_type='BNCI2014001', alignment=False):
     n_classes = 2
 
     if dataset_type == 'BNCI2014001':
-        # n_classes = 4
         dataset = BNCI2014001()
         datasets = [dataset]
         n_chans = 22
         input_window_samples = 1001
+        rpc = 12
 
     else:
         dataset = PhysionetMI(imagined=True)
         datasets = [dataset]
         n_chans = 64
         input_window_samples = 481
+        rpc = 6
 
     model = init_model(n_chans, n_classes, input_window_samples)
     # Send model to GPU
@@ -83,7 +84,7 @@ def main(dataset_type='BNCI2014001', alignment=False):
 
     # Create pipeline
     if alignment:
-        create_dataset = TransformaParaWindowsDatasetEA()
+        create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
     else:
         create_dataset = TransformaParaWindowsDataset()
 
