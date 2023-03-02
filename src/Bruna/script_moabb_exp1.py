@@ -87,10 +87,14 @@ def main(args):
         suffix="experiment_1",
         overwrite=overwrite,
         return_epochs=True,
+        hdf5_path=run_dir,
     )
 
     results = evaluation.process(pipes)
     print(results.head())
+
+    # Save results
+    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
 
