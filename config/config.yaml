@@ -1,0 +1,18 @@
+seed: 42
+train:
+    num_workers: 10
+    run_report: '/mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/outputs/'
+    n_epochs: 300
+    patience: 50
+    weight_decay: 0
+    batch_size: 64
+    lr: 0.000625
+    valid_split: 0.2
+model:
+    drop_prob: 0.5
+    final_conv_length: 'auto'
+dataset:
+    path: "/mnt/beegfs/projects/moabb/mne_data"
+
+    epochs:
+
