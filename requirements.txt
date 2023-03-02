@@ -1,0 +1,9 @@
+git+https://github.com/NeuroTechX/moabb#egg=moabb
+braindecode
+pandas
+numpy
+mlxtend
+omegaconf
+torch
+scikit-learn
+mlflow
