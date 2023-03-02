@@ -72,7 +72,8 @@ def main(args):
     else:
         create_dataset = TransformaParaWindowsDataset()
 
-    fit_params = {"epochs": 200}
+    fit_params = {"epochs": config.train.n_epochs}
+
     brain_clf = ClassifierModel(clf, fit_params)
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", brain_clf)])
