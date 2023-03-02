@@ -1,15 +1,16 @@
+import copy
+
+import torch
+
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseConcatDataset
 from braindecode.models import EEGNetv4
-from distributed.protocol import torch
-from skorch.callbacks import LRScheduler, EarlyStopping, EpochScoring
-from skorch.helper import predefined_split, SliceDataset
 from sklearn.base import clone
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import roc_auc_score, balanced_accuracy_score
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
-import copy
-from numpy import unique
+from skorch.helper import predefined_split, SliceDataset
 
 
 def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None):
