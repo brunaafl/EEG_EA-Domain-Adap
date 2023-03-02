@@ -21,12 +21,6 @@ import numpy as np
 import skorch
 import torch
 
-from braindecode.datasets import BaseConcatDataset
-import copy
-from braindecode.preprocessing import (preprocess, Preprocessor)
-from alignment import euclidean_alignment
-
-
 _seed = None
 _flag_deterministic = torch.backends.cudnn.deterministic
 _flag_cudnn_benchmark = torch.backends.cudnn.benchmark
