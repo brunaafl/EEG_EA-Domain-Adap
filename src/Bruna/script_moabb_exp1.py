@@ -29,9 +29,11 @@ def main(dataset_type='BNCI2014001', alignment=False):
     args : object
     :param dataset_type:
     """
-
+    config = OmegaConf.load(args.config_file)
+    # Setting run information
+    set_determinism(seed=config.seed)
     # Set download dir
-    set_download_dir(osp.join(osp.expanduser("~"), "mne_data"))
+    run_dir, experiment_name = set_run_dir(config, args)
 
     cuda = (
         torch.cuda.is_available()
