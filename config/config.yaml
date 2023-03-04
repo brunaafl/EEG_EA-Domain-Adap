@@ -14,5 +14,3 @@ model:
 dataset:
     path: "/mnt/beegfs/projects/moabb/mne_data"
 
-    epochs:
-
