@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --mem-per-gpu=8G
 #SBATCH --time=48:00:00
-#SBATCH --mail-user=a.bruno@ufabc.edu.br, brunoxda@gmail.com
+#SBATCH --mail-user=a.bruno@ufabc.edu.br
 #SBATCH --gres=gpu:1
 #SBATCH --output=/mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/logs/eeg_euclidean_alignment_exp_1_dataset_1_%j.log
 #SBATCH --mail-type=ALL		
