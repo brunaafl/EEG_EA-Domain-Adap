@@ -66,7 +66,7 @@ def define_clf(model, config):
     weight_decay = config.train.weight_decay
     batch_size = config.train.batch_size
     lr = config.train.lr
-    patience = config.patience
+    patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     clf = EEGClassifier(

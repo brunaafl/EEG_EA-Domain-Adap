@@ -111,7 +111,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--aligment",
+        "--alignment",
         type=str,
         help="select if the data will be have alignment or not.",
         default="no_alignment",
@@ -167,7 +167,7 @@ def set_run_dir(config, args):
             + "-"
             + str(args.dataset)
             + '-'
-            + str(args.aligment)
+            + str(args.alignment)
     )
 
     run_dir = output_dir / experiment_name
@@ -209,7 +209,7 @@ def starting_mlflow(config, args, baseline=False, model_name="", task=""):
                 + "-"
                 + str(args.dataset)
                 + '-'
-                + str(args.aligment)
+                + str(args.alignment)
         )
 
     mlflow.set_experiment(experiment_name)

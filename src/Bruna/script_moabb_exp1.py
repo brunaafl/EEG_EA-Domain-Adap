@@ -58,7 +58,7 @@ def main(args):
 
     paradigm = MotorImagery(events=events, n_classes=len(events))
 
-    model = init_model(n_chans, n_classes, input_window_samples)
+    model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
     if cuda:
         model.cuda()
@@ -67,7 +67,7 @@ def main(args):
     clf = define_clf(model, config)
 
     # Create pipeline
-    if args.alignment == 'aligment':
+    if args.alignment == 'alignment':
         create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
     else:
         create_dataset = TransformaParaWindowsDataset()
