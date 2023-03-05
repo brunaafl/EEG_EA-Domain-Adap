@@ -88,6 +88,7 @@ def main(args):
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
+        n_jobs=-1,
     )
 
     results = evaluation.process(pipes)
