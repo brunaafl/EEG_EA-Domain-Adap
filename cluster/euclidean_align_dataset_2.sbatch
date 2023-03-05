@@ -3,11 +3,12 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
-#SBATCH --mem=8G
-#SBATCH --time=08:00:00
+#SBATCH --mem=32G
+#SBATCH --time=48:00:00
 #SBATCH --mail-user=a.bruno@ufabc.edu.br
-#SBATCH --mail-type=ALL		
-
+#SBATCH --gres=gpu:1
+#SBATCH --output=/mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/logs/eeg_euclidean_alignment_exp_1_dataset_2_%j.log
+#SBATCH --mail-type=ALL
 
 module load /mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/cluster/python
 
