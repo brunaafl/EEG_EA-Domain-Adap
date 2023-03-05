@@ -4,7 +4,6 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=32G
-#SBATCH --mem-per-gpu=8G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user=a.bruno@ufabc.edu.br
 #SBATCH --gres=gpu:1
