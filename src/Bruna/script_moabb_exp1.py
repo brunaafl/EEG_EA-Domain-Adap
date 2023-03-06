@@ -4,68 +4,48 @@ Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 
 """
-import os.path as osp
 
-import matplotlib.pyplot as plt
-import mne
-import seaborn as sns
 import torch
-import copy
-
-from braindecode import EEGClassifier
-from braindecode.datasets import create_from_X_y
-from braindecode.models import ShallowFBCSPNet, EEGNetv4
-from braindecode.util import set_random_seeds
-
 from moabb.datasets import BNCI2014001, PhysionetMI
-from moabb.evaluations import WithinSessionEvaluation, CrossSubjectEvaluation
-from moabb.paradigms import LeftRightImagery
-from moabb.utils import set_download_dir
-
+from moabb.evaluations import CrossSubjectEvaluation
+from moabb.paradigms import MotorImagery
+from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 
-from train import init_model, define_clf
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA, ClassifierModel
-from util import parse_args
-
+from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
+from train import define_clf, init_model
+from util import parse_args, set_determinism, set_run_dir
 
 """
 For the joint model
 """
 
 
-def main(dataset_type='BNCI2014001', alignment=False):
+def main(args):
     """
 
     Parameters
     ----------
     args : object
-    :param dataset_type:
     """
-
+    config = OmegaConf.load(args.config_file)
+    # Setting run information
+    set_determinism(seed=config.seed)
     # Set download dir
-    set_download_dir(osp.join(osp.expanduser("~"), "mne_data"))
+    run_dir, experiment_name = set_run_dir(config, args)
 
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
-    device = "cuda" if cuda else "cpu"
-    if cuda:
-        torch.backends.cudnn.benchmark = True
-    seed = 20200220  # random seed to make results reproducible
-    # Set random seed to be able to reproduce results
-    set_random_seeds(seed=seed, cuda=cuda)
-
     # Define paradigm and datasets
-    paradigm = LeftRightImagery()
-    n_classes = 2
-
-    if dataset_type == 'BNCI2014001':
+    if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
         datasets = [dataset]
         n_chans = 22
         input_window_samples = 1001
         rpc = 12
+        events = ["right_hand", "left_hand"]
+        n_classes = len(events)
 
     else:
         dataset = PhysionetMI(imagined=True)
@@ -73,22 +53,27 @@ def main(dataset_type='BNCI2014001', alignment=False):
         n_chans = 64
         input_window_samples = 481
         rpc = 6
+        events = ["left_hand", "right_hand"]
+        n_classes = len(events)
 
-    model = init_model(n_chans, n_classes, input_window_samples)
+    paradigm = MotorImagery(events=events, n_classes=len(events))
+
+    model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
     if cuda:
         model.cuda()
 
     # Create Classifier
-    clf = define_clf(model, device)
+    clf = define_clf(model, config)
 
     # Create pipeline
-    if alignment:
+    if args.alignment == 'alignment':
         create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
     else:
         create_dataset = TransformaParaWindowsDataset()
 
-    fit_params = {"epochs": 200}
+    fit_params = {"epochs": config.train.n_epochs}
+
     brain_clf = ClassifierModel(clf, fit_params)
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", brain_clf)])
@@ -102,10 +87,15 @@ def main(dataset_type='BNCI2014001', alignment=False):
         suffix="experiment_1",
         overwrite=overwrite,
         return_epochs=True,
+        hdf5_path=run_dir,
+        n_jobs=-1,
     )
 
     results = evaluation.process(pipes)
     print(results.head())
+
+    # Save results
+    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
 

@@ -39,6 +39,3 @@ def euclidean_alignment(data, y=None):
     result = np.matmul(r_op, data)
 
     return result
-
-
-# TO-DO : Add the augmentation version of this function

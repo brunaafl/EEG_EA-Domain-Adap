@@ -1,15 +1,16 @@
+import copy
+
+import torch
+
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseConcatDataset
 from braindecode.models import EEGNetv4
-from distributed.protocol import torch
-from skorch.callbacks import LRScheduler, EarlyStopping, EpochScoring
-from skorch.helper import predefined_split, SliceDataset
 from sklearn.base import clone
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import roc_auc_score, balanced_accuracy_score
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
-import copy
-from numpy import unique
+from skorch.helper import predefined_split, SliceDataset
 
 
 def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None):
@@ -48,24 +49,39 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
     return clf
 
 
-def define_clf(model, device):
-    weight_decay = 0
-    batch_size = 64
-    n_epochs = 300
-    lr = 0.0625 * 0.01
-    patience = 50
+def define_clf(model, config):
+    """
+    Transform the pytorch model into classifier object to be used in the training
+    Parameters
+    ----------
+    model: pytorch model
+    device: cuda or cpu
+    config: dict with the configuration parameters
+
+    Returns
+    -------
+    clf: skorch classifier
+
+    """
+    weight_decay = config.train.weight_decay
+    batch_size = config.train.batch_size
+    lr = config.train.lr
+    patience = config.train.patience
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
         optimizer=torch.optim.AdamW,
-        train_split=ValidSplit(0.20),  # using valid_set for validation
+        train_split=ValidSplit(config.train.valid_split),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc', lower_is_better=False)],
+                   EpochScoring(scoring='accuracy', on_train=True,
+                                name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False,
+                                name='valid_acc', lower_is_better=False)],
         device=device,
         verbose=1,
     )
@@ -119,13 +135,13 @@ def train_func(model, Train_data, Test_data, Val_data, device):
     return clf, bac
 
 
-def init_model(n_chans, n_classes, input_window_samples):
+def init_model(n_chans, n_classes, input_window_samples, config):
     model = EEGNetv4(
         n_chans,
         n_classes,
         input_window_samples=input_window_samples,
-        final_conv_length='auto',
-        drop_prob=0.5
+        final_conv_length=config.model.final_conv_length,
+        drop_prob=config.model.drop_prob
     )
     return model
 
@@ -143,7 +159,7 @@ def fine_tuning(model, device, subj, Test, Train_test):
 
         clf_fine_tune = EEGClassifier(
             module=copy.deepcopy(model),
-            train_split=None, # predefined_split(val_set)
+            train_split=None,  # predefined_split(val_set)
             callbacks=[
                 "accuracy", ("lr_scheduler",
                              LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
@@ -172,4 +188,3 @@ def fine_tuning(model, device, subj, Test, Train_test):
         print(f"  bac = {bac2}")
 
         return bac_runs
-
