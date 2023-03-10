@@ -6,11 +6,21 @@ Baseline script to analyse the EEG Dataset.
 """
 
 import torch
-from moabb.datasets import BNCI2014001, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.evaluations import CrossSubjectEvaluation
-from moabb.paradigms import MotorImagery
+from moabb.paradigms import MotorImagery, LeftRightImagery
+
+import moabb.analysis.plotting as moabb_plt
+from moabb.analysis.meta_analysis import (  # noqa: E501
+    compute_dataset_statistics,
+    find_significant_differences,
+)
+import matplotlib.pyplot as plt
+
+
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
+from sklearn.base import clone
 
 from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
@@ -38,25 +48,30 @@ def main(args):
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
     # Define paradigm and datasets
-    if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
-        datasets = [dataset]
-        n_chans = 22
-        input_window_samples = 1001
-        rpc = 12
-        events = ["right_hand", "left_hand"]
-        n_classes = len(events)
-
-    else:
-        dataset = PhysionetMI(imagined=True)
-        datasets = [dataset]
-        n_chans = 64
-        input_window_samples = 481
-        rpc = 6
-        events = ["left_hand", "right_hand"]
-        n_classes = len(events)
+    events = ["right_hand", "left_hand"]
 
     paradigm = MotorImagery(events=events, n_classes=len(events))
+
+    if args.dataset == 'BNCI2014001':
+        dataset = BNCI2014001()
+    elif args.dataset == 'Cho2017':
+        dataset = Cho2017()
+    elif args.dataset == 'Lee2019_MI':
+        dataset = Lee2019_MI()
+    elif args.dataset == 'Schirrmeister2017':
+        dataset = Schirrmeister2017()
+    elif args.dataset == 'PhysionetMI':
+        dataset = PhysionetMI()
+        paradigm = LeftRightImagery()
+
+    datasets = [dataset]
+    events = ["left_hand", "right_hand"]
+    n_classes = len(events)
+
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
+    n_chans = X.shape[1]
+    input_window_samples = X.shape[2]
+    rpc = len(meta['session'].unique())*len(meta['run'].unique())
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -66,25 +81,25 @@ def main(args):
     # Create Classifier
     clf = define_clf(model, config)
 
-    # Create pipeline
-    if args.alignment == 'alignment':
-        create_dataset = TransformaParaWindowsDatasetEA(rpc, n_classes)
-    else:
-        create_dataset = TransformaParaWindowsDataset()
+    create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
+    create_dataset = TransformaParaWindowsDataset()
 
-    fit_params = {"epochs": config.train.n_epochs}
+    pipes = {}
 
-    brain_clf = ClassifierModel(clf, fit_params)
+    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
+                                ("Net", clone(clf))])
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
-                     ("Net", brain_clf)])
-    pipes = {"EEGNetv4": pipe}
+                     ("Net", clone(clf))])
+
+    pipes["EEGNetv4_EA"] = pipe_with_align
+    pipes["EEGNetv4_Without_EA"] = pipe
 
     # Define evaluation and train
     overwrite = True  # set to True if we want to overwrite cached results
     evaluation = CrossSubjectEvaluation(
         paradigm=paradigm,
         datasets=datasets,
-        suffix="experiment_1",
+        suffix=f"experiment_1_{args.dataset}",
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
@@ -93,6 +108,24 @@ def main(args):
 
     results = evaluation.process(pipes)
     print(results.head())
+
+    fig = moabb_plt.score_plot(results)
+    fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    plt.show()
+
+    fig = moabb_plt.paired_plot(results, "EEGNetv4_EA", "EEGNetv4_Without_EA")
+    fig.savefig(f"{run_dir}/paired_score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
+
+    stats = compute_dataset_statistics(results)
+    P, T = find_significant_differences(stats)
+
+    fig = moabb_plt.meta_analysis_plot(stats, "EEGNetv4_EA", "EEGNetv4_Without_EA")
+    fig.savefig(f"{run_dir}/meta_analysis_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    plt.show()
+
+    fig = moabb_plt.summary_plot(P, T)
+    fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    plt.show()
 
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
