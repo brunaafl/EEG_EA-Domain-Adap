@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eeg_euclidean_alignment_exp_1_dataset_1
+#SBATCH --job-name=eeg_euclidean_alignment_exp_1_dataset_4
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
