@@ -109,7 +109,11 @@ def main(args):
     results = evaluation.process(pipes)
     print(results.head())
 
-    fig = moabb_plt.score_plot(results)
+    # Save results
+    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+
+
+    fig, color_dict = moabb_plt.score_plot(results)
     fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
     plt.show()
 
@@ -126,9 +130,6 @@ def main(args):
     fig = moabb_plt.summary_plot(P, T)
     fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
     plt.show()
-
-    # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
 
