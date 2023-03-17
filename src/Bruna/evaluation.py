@@ -13,7 +13,10 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
 from moabb.evaluations.base import BaseEvaluation
+import pandas as pd
+import mne
 
+mne.set_log_level(False)
 log = logging.getLogger(__name__)
 
 # Numpy ArrayLike is only available starting from Numpy 1.20 and Python 3.8
@@ -139,3 +142,153 @@ def add_test_column(dataset, results):
     test = array.flatten()
     results.insert(4, 'test', test, True)
     return results
+
+
+def eval_exp2(dataset, paradigm, pipes):
+    """
+
+    Cross subject evaluation with different sizes of training set.
+    For each test subject, at each assay, we chose
+
+    :param dataset:
+    :param paradigm:
+    :param pipes:
+    :return: results:
+             model_list:
+
+    """
+
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    results = list()
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+
+        subject = groups[test[0]]
+
+        # iterate over each pipeline
+        for name, clf in pipes.items():
+
+            train_idx = runs[train] == 'run_0'
+            runs_list = np.unique(runs[train])
+            runs_idx = list(range(len(runs_list)))
+
+            # MAYBE it could be interesting to sort the runs instead of use the order
+            for r in runs_idx:
+                tr = runs[train] == f"run_{r}"
+                train_idx = np.logical_or(train_idx, tr)
+
+                t_start = time()
+                model = deepcopy(clf).fit(X[train[train_idx]], y[train[train_idx]])
+                duration = time() - t_start
+
+                session = 'both'
+
+                # I don't think we need to divide in sessions
+                # ix = sessions[test] == session
+                score = _score(model, X[test], y[test], scorer)
+                print(score)
+
+                nchan = (
+                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                )
+                res = {
+                    "time": duration,
+                    "subject": subject,
+                    "n_train_runs": r + 1,
+                    "session": session,
+                    "score": score,
+                    "n_samples": len(train[train_idx]),
+                    "n_channels": nchan,
+                    "dataset": dataset.code,
+                    "pipeline": name,
+                }
+
+                results.append(res)
+
+    results = pd.DataFrame(results)
+
+    return results
+
+
+def eval_exp4(dataset, paradigm, pipes):
+    """
+
+    Fit a model for each individual, and then test it for the other different ones.
+    Iterates over all pipes.
+
+    :param dataset:
+    :param paradigm:
+    :param pipes:
+    :return: results:
+             model_list:
+
+    """
+
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    results = []
+    model_list = []
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+
+        # iterate over each pipeline
+        for name, clf in pipes.items():
+
+            t_start = time()
+            model = deepcopy(clf).fit(X[train], y[train])
+            duration = time() - t_start
+            model_list.append(model)
+
+            # for each test subject
+            for subj in np.unique(groups[test]):
+                # Now evaluate
+                ix = groups[test] == subj
+                score = _score(model, X[test[ix]], y[test[ix]], scorer)
+                session = 'both'
+                nchan = (
+                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                )
+                res = {
+                    "time": duration,
+                    "subject": groups[train[0]],
+                    "test": subj,
+                    "session": session,
+                    "score": score,
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "dataset": dataset.code,
+                    "pipeline": name,
+                }
+
+                results.append(res)
+
+    results = pd.DataFrame(results)
+
+    return results, model_list
