@@ -62,7 +62,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery()
+        paradigm = LeftRightImagery(resample=100.0)
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
@@ -91,11 +91,13 @@ def main(args):
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
-    pipes["EEGNetv4_EA"] = pipe_with_align
-    pipes["EEGNetv4_Without_EA"] = pipe
+    if args.ea == 'alignment':
+        pipes["EEGNetv4_EA"] = pipe_with_align
+    else:
+        pipes["EEGNetv4_Without_EA"] = pipe
 
     # Define evaluation and train
-    overwrite = True  # set to True if we want to overwrite cached results
+    overwrite = False  # set to True if we want to overwrite cached results
     evaluation = CrossSubjectEvaluation(
         paradigm=paradigm,
         datasets=datasets,
