@@ -125,6 +125,15 @@ def parse_args():
         default="exp_1",
         choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"],
     )
+    
+    parser.add_argument(
+        "--ea",
+        type=str,
+        help="select alignment",
+        default="alignment",
+        choices=["alignment", "no_alignment"],
+    )
+        
     args = parser.parse_args()
     return args
 
@@ -158,6 +167,8 @@ def set_run_dir(config, args):
             args.num_exp
             + "-"
             + str(args.dataset)
+            + "-"
+            + str(args.ea)
     )
 
     run_dir = output_dir / experiment_name
@@ -198,6 +209,8 @@ def starting_mlflow(config, args, baseline=False, model_name="", task=""):
                 args.num_exp
                 + "-"
                 + str(args.dataset)
+                + "-"
+                + str(args.ea)
         )
 
     mlflow.set_experiment(experiment_name)
