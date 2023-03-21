@@ -10,8 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from moabb.utils import set_download_dir
-
 import argparse
 import random
 import warnings
@@ -22,6 +20,12 @@ import mlflow
 import numpy as np
 import skorch
 import torch
+
+from braindecode.datasets import BaseConcatDataset
+import copy
+from braindecode.preprocessing import (preprocess, Preprocessor)
+from alignment import euclidean_alignment
+
 
 _seed = None
 _flag_deterministic = torch.backends.cudnn.deterministic
@@ -111,28 +115,13 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--alignment",
+        "--data",
         type=str,
         help="select if the data will be have alignment or not.",
         default="no_alignment",
         choices=["no_alignment", "alignment"],
     )
 
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        help="select the dataset to be used on the analyse.",
-        default="BNCI2014001",
-        choices=["BNCI2014001", "PhysionetMI"],
-    )
-
-    parser.add_argument(
-        "--num_exp",
-        type=str,
-        help="select which experiment we gonna run.",
-        default="exp_1",
-        choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"],
-    )
     args = parser.parse_args()
     return args
 
@@ -155,23 +144,16 @@ def set_run_dir(config, args):
     Name of the experiment.
 
     """
-    print("Changing the path download dir")
-
-    set_download_dir(config.dataset.path)
-
     output_dir = Path(config.train.run_report + "/runs/")
     output_dir.mkdir(exist_ok=True, parents=True)
 
     experiment_name = (
-            args.num_exp
+            config.train.experiment_name
             + "-"
             + str(args.dataset)
-            + '-'
-            + str(args.alignment)
     )
 
-    run_dir = output_dir / experiment_name
-
+    run_dir = output_dir / (experiment_name)
     print(f"The run_dir is {run_dir}")
     if run_dir.exists() and (run_dir / "checkpoint.pth").exists():
         pass
@@ -205,11 +187,9 @@ def starting_mlflow(config, args, baseline=False, model_name="", task=""):
         )
     else:
         experiment_name = (
-                args.num_exp
+                config.train.experiment_name
                 + "-"
                 + str(args.dataset)
-                + '-'
-                + str(args.alignment)
         )
 
     mlflow.set_experiment(experiment_name)
@@ -276,3 +256,5 @@ def log_mlflow(active_run, model, run_report, config, args, split_ids):
             print(f"Error {ex}, ignore if train option.")
 
             print("log the model fail in option 1, works in option 2.")
+
+

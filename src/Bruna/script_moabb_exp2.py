@@ -4,21 +4,10 @@ Baseline script to analyse the EEG Dataset.
 """
 
 import torch
-import pandas as pd
-import numpy as np
 
 from omegaconf import OmegaConf
-from copy import deepcopy
-from time import time
-from tqdm import tqdm
-from mne.epochs import BaseEpochs
 
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import get_scorer
-from sklearn.model_selection import LeaveOneGroupOut
-from sklearn.model_selection._validation import _score
-from sklearn.preprocessing import LabelEncoder
-
 
 import moabb.analysis.plotting as moabb_plt
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
@@ -30,6 +19,7 @@ from moabb.analysis.meta_analysis import (  # noqa: E501
 import matplotlib.pyplot as plt
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
+from evaluation import eval_exp2
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
@@ -99,82 +89,13 @@ def main(args):
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
-    pipes["EEGNetv4_EA"] = pipe_with_align
-    pipes["EEGNetv4_Without_EA"] = pipe
+    if args.ea == 'alignment':
+        pipes["EEGNetv4_EA"] = pipe_with_align
+    else:
+        pipes["EEGNetv4_Without_EA"] = pipe
 
-    # Define evaluation and train
-    overwrite = True  # set to True if we want to overwrite cached results
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
-    # extract metadata
-    groups = metadata.subject.values
-    sessions = metadata.session.values
-    runs = metadata.run.values
-    n_subjects = len(dataset.subject_list)
-
-    scorer = get_scorer(paradigm.scoring)
-
-    # encode labels
-    le = LabelEncoder()
-    y = le.fit_transform(y)
-    # evaluation
-    cv = LeaveOneGroupOut()
-
-    dataset_res = list()
-    # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
-
-        subject = groups[test[0]]
-
-        # iterate over each pipeline
-        for name, clf in pipes.items():
-
-            train_idx = runs[train] == 'run_0'
-            runs_list = np.unique(runs[train])
-            runs_idx = list(range(len(runs_list)))
-
-            # MAYBE it could be interesting to sort the runs to ass instead of use the order
-            for r in runs_idx:
-                # if sorted: k=0
-                # while k < len(runs_idx)
-
-                # If we want sorted:
-                # if r =! 0:
-                #  r = choice(runs_idx)
-                #  runs_idx.remove(r)
-                #
-
-                tr = runs[train] == f"run_{r}"
-                train_idx = np.logical_or(train_idx, tr)
-
-                t_start = time()
-                model = deepcopy(clf).fit(X[train[train_idx]], y[train[train_idx]])
-                duration = time() - t_start
-
-                session = 'both'
-
-                # I don't think we need to divide in sessions
-                # ix = sessions[test] == session
-                score = _score(model, X[test], y[test], scorer)
-                print(score)
-
-                nchan = (
-                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                )
-                res = {
-                    "time": duration,
-                    "subject": subject,
-                    "n_train_runs": r + 1,
-                    "session": session,
-                    "score": score,
-                    "n_samples": len(train[train_idx]),
-                    "n_channels": nchan,
-                    "dataset": dataset.code,
-                    "pipeline": name,
-                }
-
-                dataset_res.append(res)
-
-    results = pd.DataFrame(dataset_res)
+    # Evaluation for this experiment
+    results = eval_exp2(dataset, paradigm, pipes)
 
     # results = evaluation.process(pipes)
     print(results.head())
@@ -201,6 +122,8 @@ def main(args):
     plt.show()
 
     print("---------------------------------------")
+
+    # return results
 
 
 # Press the green button in the gutter to run the script.

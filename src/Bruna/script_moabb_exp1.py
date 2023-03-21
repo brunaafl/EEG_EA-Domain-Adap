@@ -1,8 +1,6 @@
 """
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
-
 Baseline script to analyse the EEG Dataset.
-
 """
 
 import torch
@@ -23,7 +21,6 @@ For the joint model
 
 def main(args):
     """
-
     Parameters
     ----------
     args : object
@@ -84,7 +81,7 @@ def main(args):
     evaluation = CrossSubjectEvaluation(
         paradigm=paradigm,
         datasets=datasets,
-        suffix="experiment_1",
+        suffix=f"experiment_1_{args.dataset}",
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
@@ -98,6 +95,8 @@ def main(args):
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
+
+    # return results
 
 
 # Press the green button in the gutter to run the script.

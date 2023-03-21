@@ -175,7 +175,7 @@ def eval_exp2(dataset, paradigm, pipes):
 
     results = list()
     # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CSTrainSize"):
 
         subject = groups[test[0]]
 
@@ -200,7 +200,6 @@ def eval_exp2(dataset, paradigm, pipes):
                 # I don't think we need to divide in sessions
                 # ix = sessions[test] == session
                 score = _score(model, X[test], y[test], scorer)
-                print(score)
 
                 nchan = (
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
@@ -225,24 +224,10 @@ def eval_exp2(dataset, paradigm, pipes):
 
 
 def eval_exp4(dataset, paradigm, pipes):
-    """
-
-    Fit a model for each individual, and then test it for the other different ones.
-    Iterates over all pipes.
-
-    :param dataset:
-    :param paradigm:
-    :param pipes:
-    :return: results:
-             model_list:
-
-    """
-
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
-    runs = metadata.run.values
     n_subjects = len(dataset.subject_list)
 
     scorer = get_scorer(paradigm.scoring)
@@ -256,7 +241,9 @@ def eval_exp4(dataset, paradigm, pipes):
     results = []
     model_list = []
     # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+
+        subject = groups[test[0]]
 
         # iterate over each pipeline
         for name, clf in pipes.items():
