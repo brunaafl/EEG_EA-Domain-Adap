@@ -148,13 +148,14 @@ def eval_exp2(dataset, paradigm, pipes):
     """
 
     Cross subject evaluation with different sizes of training set.
-    For each test subject, at each assay, we chose
+    For each test subject, at each assay, we have chosen a percentage a=k/n for each test subject j,
+    where n is the total number of runs per subject of the dataset and k=1,…, n, from the total number
+    of train data using all N-1 subjects.
 
-    :param dataset:
-    :param paradigm:
-    :param pipes:
-    :return: results:
-             model_list:
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
 
     """
 
@@ -224,6 +225,17 @@ def eval_exp2(dataset, paradigm, pipes):
 
 
 def eval_exp4(dataset, paradigm, pipes):
+    """
+
+    Create one model per subject and the with the others
+
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
+             model_list: list of clf
+
+    """
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
     # extract metadata
     groups = metadata.subject.values
@@ -279,3 +291,113 @@ def eval_exp4(dataset, paradigm, pipes):
     results = pd.DataFrame(results)
 
     return results, model_list
+
+
+def eval_exp3(dataset, paradigm, pipes):
+    """
+
+    Fine-tuning of the Cross subject evaluated model
+
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
+
+    """
+
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    results = []
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+        subject = groups[test[0]]
+
+        for name, clf in pipes.items():
+
+            # Create the new model and initialize it
+            ftclf = deepcopy(clf)
+            # fit
+            t_start = time()
+            model = ftclf.fit(X[train], y[train])
+            duration = time() - t_start
+
+            # Predict on the test data
+            # First, using 0 runs
+            ix = sessions[test] == 'session_E'
+            X_test = X[test[ix]]
+            y_test = y[test[ix]]
+            score = _score(model, X_test, y_test, scorer)
+
+            nchan = (
+                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+            )
+
+            res = {
+                "time": duration,
+                "subject": groups[test[0]],
+                "n_test_runs": 0,
+                "test_session": 'session_E',
+                "score": score,
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "dataset": dataset.code,
+                "pipeline": name,
+            }
+            results.append(res)
+
+            # Save the scorer
+            tftr0 = runs[test] == 'run_0'
+            tfts = sessions[test] == 'session_T'
+            test_ft_idx = np.logical_and(tftr0, tfts)
+
+            # now, add the runs in the train set
+            # for run in np.unique(runs):
+            for k in range(len(np.unique(runs))):
+                # runs to put in the training
+                tftr = runs[test] == f"run_{k}"
+                # find the session_T part of the run
+                inter = np.logical_and(tfts, tftr)
+                # find the union between the previous fine-tuning test
+                test_ft_idx = np.logical_or(test_ft_idx, inter)
+
+                # Compute train data
+                train_idx = np.concatenate((train, test[test_ft_idx]))
+                X_train = X[train_idx]
+                y_train = y[train_idx]
+
+                # Fit
+                t_start = time()
+                ftmodel = deepcopy(ftclf).fit(X_train, y_train)
+                duration = time() - t_start
+
+                # Predict on the test set
+                score = _score(ftmodel, X_test, y_test, scorer)
+
+                res = {
+                    "time": duration,
+                    "subject": groups[test[0]],
+                    "n_test_runs": k + 1,
+                    "test_session": 'session_E',
+                    "score": score,
+                    "n_samples": len(train_idx),
+                    "n_channels": nchan,
+                    "dataset": dataset.code,
+                    "pipeline": name,
+                }
+                results.append(res)
+
+    results = pd.DataFrame(results)
+    return results
