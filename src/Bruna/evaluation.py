@@ -293,7 +293,7 @@ def eval_exp4(dataset, paradigm, pipes):
     return results, model_list
 
 
-def eval_exp3(dataset, paradigm, pipes):
+def eval_exp3(dataset, paradigm, pipes, run_dir):
     """
 
     Fine-tuning of the Cross subject evaluated model
@@ -333,6 +333,13 @@ def eval_exp3(dataset, paradigm, pipes):
             t_start = time()
             model = ftclf.fit(X[train], y[train])
             duration = time() - t_start
+
+            ftclf['Net'].save_params(
+                f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
+                f_history=str(run_dir/f"final_model_history_{subject}.json"),
+                f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
+                f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),
+            )
 
             # Predict on the test data
             # First, using 0 runs
@@ -381,6 +388,15 @@ def eval_exp3(dataset, paradigm, pipes):
                 # Fit
                 t_start = time()
                 ftmodel = deepcopy(ftclf).fit(X_train, y_train)
+                ftmodel['Net'].load_params(
+                    f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
+                    f_history=str(run_dir/f"final_model_history_{subject}.json"),
+                    f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
+                    f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),)
+                ftclf['Net'].module_.conv_temporal.requires_grad_(False)
+                # continuar aqui
+
+
                 duration = time() - t_start
 
                 # Predict on the test set
