@@ -115,12 +115,29 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--data",
+        "--dataset",
         type=str,
-        help="select if the data will be have alignment or not.",
-        default="no_alignment",
-        choices=["no_alignment", "alignment"],
+        help="select the dataset to be used on the analyse.",
+        default="BNCI2014001",
+        choices=["BNCI2014001", "PhysionetMI", "Cho2017", "Lee2019_MI", "Schirrmeister2017"],
     )
+
+    parser.add_argument(
+        "--num_exp",
+        type=str,
+        help="select which experiment we gonna run.",
+        default="exp_1",
+        choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"],
+    )
+    
+    parser.add_argument(
+        "--ea",
+        type=str,
+        help="select alignment",
+        default="alignment",
+        choices=["alignment", "no_alignment"],
+    )
+        
 
     args = parser.parse_args()
     return args
@@ -151,6 +168,9 @@ def set_run_dir(config, args):
             config.train.experiment_name
             + "-"
             + str(args.dataset)
+            + "-"
+            + str(args.ea)
+
     )
 
     run_dir = output_dir / (experiment_name)
@@ -190,6 +210,8 @@ def starting_mlflow(config, args, baseline=False, model_name="", task=""):
                 config.train.experiment_name
                 + "-"
                 + str(args.dataset)
+                + "-"
+                + str(args.ea)
         )
 
     mlflow.set_experiment(experiment_name)
