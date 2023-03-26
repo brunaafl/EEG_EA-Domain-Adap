@@ -1,8 +1,6 @@
 """
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
-
 Baseline script to analyse the EEG Dataset.
-
 """
 
 import torch
@@ -33,7 +31,6 @@ For the joint model
 
 def main(args):
     """
-
     Parameters
     ----------
     args : object
@@ -134,6 +131,8 @@ def main(args):
     plt.show()
 
     print("---------------------------------------")
+
+    # return results
 
 
 # Press the green button in the gutter to run the script.

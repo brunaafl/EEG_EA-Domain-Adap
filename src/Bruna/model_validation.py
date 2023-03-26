@@ -23,7 +23,6 @@ def split_train_test(
     a list of indices.
     TODO: add option for K-fold or subject-wise K-fold.
     Returns indices of split data.
-
     Parameters
     ----------
     windows_dataset: WindowsDataset object from braindecode.
@@ -31,7 +30,6 @@ def split_train_test(
         a column named subject.
     leave_one_subject_out: bool, default True
         If True, the split will be leave-one-subject-out.
-
     Returns
     -------
     split_ids: list of dict of indices for the train, test subsets.
@@ -88,11 +86,9 @@ def split_train_val(DS_train, val_subj=None):
 def split_dataset(w_dataset, subject_ids):
     """
     Split the data in subjects.
-
     Arguments:
     w_dataset : BaseConcatDataset
     subjects_id : list
-
     Return:
     Data_subj : BaseConcatDataset
     """
@@ -114,15 +110,12 @@ def split_dataset(w_dataset, subject_ids):
 def EA_dataset(Data_subj, subject_ids):
     """
     Align each subject in your own space
-
     Arguments:
     Data_subj : BaseConcatDataset
     subject_ids : list
     session : boolean
-
     Return:
     Data_subj_EA : BaseConcatDataset
-
     """
 
     idx = subject_ids
@@ -137,14 +130,12 @@ def EA_dataset(Data_subj, subject_ids):
 def split_run(Data_subj, run):
     """
     Split each subject in runs
-
     Arguments:
     Data_subj : BaseConcatDataset
       Data from ONE subject
     test_subj : int
     subject_ids : list
     run : list of int
-
     Return:
     Data_subj_run : BaseConcatDataset
       Dataset from one subject splited in runs
@@ -169,12 +160,10 @@ def split_run(Data_subj, run):
 def split_size(Data_subj_run, run):
     """
     Split a specific subject in different sizes
-
     Arguments:
       Data_subj_run : BaseConcatDataset
         Data from ONE subject already splitted in runs
       run : list of int
-
     Return:
       Data_runs : list
         list of BaseConcatDatasets with different number of elements

@@ -19,7 +19,7 @@ from moabb.analysis.meta_analysis import (  # noqa: E501
 import matplotlib.pyplot as plt
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from evaluation import eval_exp4
+from evaluation import eval_exp2
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
@@ -68,7 +68,7 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    rpc = len(meta['session'].unique()) * len(meta['run'].unique())
+    rpc = len(meta['session'].unique())*len(meta['run'].unique())
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -95,7 +95,7 @@ def main(args):
         pipes["EEGNetv4_Without_EA"] = pipe
 
     # Evaluation for this experiment
-    results = eval_exp4(dataset, paradigm, pipes)
+    results = eval_exp2(dataset, paradigm, pipes)
 
     # results = evaluation.process(pipes)
     print(results.head())

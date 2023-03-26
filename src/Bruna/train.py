@@ -57,11 +57,9 @@ def define_clf(model, config):
     model: pytorch model
     device: cuda or cpu
     config: dict with the configuration parameters
-
     Returns
     -------
     clf: skorch classifier
-
     """
     weight_decay = config.train.weight_decay
     batch_size = config.train.batch_size
