@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from moabb.utils import set_download_dir
 
 from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
@@ -40,7 +41,7 @@ def main(args):
     set_determinism(seed=config.seed)
     # Set download dir
     run_dir, experiment_name = set_run_dir(config, args)
-
+    set_download_dir(config.dataset.path)
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
@@ -111,24 +112,6 @@ def main(args):
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
-
-    fig, color_dict = moabb_plt.score_plot(results)
-    fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.paired_plot(results, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/paired_score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    stats = compute_dataset_statistics(results)
-    P, T = find_significant_differences(stats)
-
-    fig = moabb_plt.meta_analysis_plot(stats, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/meta_analysis_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.summary_plot(P, T)
-    fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
 
     print("---------------------------------------")
 
