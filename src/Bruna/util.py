@@ -135,7 +135,7 @@ def parse_args():
         type=str,
         help="select alignment",
         default="alignment",
-        choices=["alignment", "no_alignment"],
+        choices=["alignment", "no-alignment"],
     )
         
 
@@ -170,6 +170,8 @@ def set_run_dir(config, args):
             + str(args.dataset)
             + "-"
             + str(args.ea)
+            + '-'
+            + str(args.num_exp)
 
     )
 
