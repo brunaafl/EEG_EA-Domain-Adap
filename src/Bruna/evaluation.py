@@ -206,11 +206,11 @@ def eval_exp2(dataset, paradigm, pipes):
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
                 res = {
-                    "time": duration,
                     "subject": subject,
                     "n_train_runs": r + 1,
                     "session": session,
                     "score": score,
+                    "time": duration,
                     "n_samples": len(train[train_idx]),
                     "n_channels": nchan,
                     "dataset": dataset.code,
@@ -275,11 +275,11 @@ def eval_exp4(dataset, paradigm, pipes):
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
                 res = {
-                    "time": duration,
                     "subject": groups[train[0]],
                     "test": subj,
                     "session": session,
                     "score": score,
+                    "time": duration,
                     "n_samples": len(train),
                     "n_channels": nchan,
                     "dataset": dataset.code,
@@ -298,6 +298,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
 
     Fine-tuning of the Cross subject evaluated model
 
+    :param run_dir:
     :param dataset : moabb.datasets
     :param paradigm : moabb.paradigms
     :param pipes : Pipeline
@@ -321,28 +322,30 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
     cv = LeaveOneGroupOut()
 
     results = []
-    # for each test subject
+    # for each test subject (Leave One Out)
     for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
+
+        # Test subject
         subject = groups[test[0]]
 
         for name, clf in pipes.items():
 
-            # Create the new model and initialize it
             ftclf = deepcopy(clf)
             # fit
             t_start = time()
             model = ftclf.fit(X[train], y[train])
             duration = time() - t_start
 
+            # Save params
             ftclf['Net'].save_params(
-                f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
-                f_history=str(run_dir/f"final_model_history_{subject}.json"),
-                f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
-                f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),
+                f_params=str(run_dir / f"final_model_params_{subject}.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}.pkl"),
             )
 
             # Predict on the test data
-            # First, using 0 runs
+            # First, using 0 runs (zero-shot)
             ix = sessions[test] == 'session_E'
             X_test = X[test[ix]]
             y_test = y[test[ix]]
@@ -353,11 +356,11 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
             )
 
             res = {
-                "time": duration,
                 "subject": groups[test[0]],
                 "n_test_runs": 0,
                 "test_session": 'session_E',
                 "score": score,
+                "time": duration,
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "dataset": dataset.code,
@@ -385,30 +388,39 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
                 X_train = X[train_idx]
                 y_train = y[train_idx]
 
-                # Fit
-                t_start = time()
-                ftmodel = deepcopy(ftclf).fit(X_train, y_train)
+                # Create a new model initialized with the saved params
+                ftmodel = deepcopy(ftclf)
+
                 ftmodel['Net'].load_params(
-                    f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
-                    f_history=str(run_dir/f"final_model_history_{subject}.json"),
-                    f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
-                    f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),)
-                ftclf['Net'].module_.conv_temporal.requires_grad_(False)
-                # continuar aqui
+                    f_params=str(f"final_model_params_{subject}.pkl"),
+                    f_history=str(f"final_model_history_{subject}.json"),
+                    f_criterion=str(f"final_model_criterion_{subject}.pkl"),
+                    f_optimizer=str(f"final_model_optimizer_{subject}.pkl"), )
 
+                # Freeze some layers
+                ftmodel['Net'].module_.conv_temporal.weight.requires_grad = False
+                ftmodel['Net'].module_.bnorm_temporal.weight.requires_grad = False
+                ftmodel['Net'].module_.conv_spatial.weight.requires_grad = False
+                ftmodel['Net'].module_.bnorm_1.weight.requires_grad = False
+                ftmodel['Net'].module_.conv_separable_depth.weight.requires_grad = False
+                ftmodel['Net'].module_.conv_separable_point.weight.requires_grad = False
+                ftmodel['Net'].module_.bnorm_2.weight.requires_grad = False
 
+                # Fit with new train data
+                t_start = time()
+                ftmodel = ftmodel.fit(X_train, y_train)
                 duration = time() - t_start
 
                 # Predict on the test set
                 score = _score(ftmodel, X_test, y_test, scorer)
 
                 res = {
-                    "time": duration,
                     "subject": groups[test[0]],
                     "n_test_runs": k + 1,
                     "test_session": 'session_E',
                     "score": score,
-                    "n_samples": len(train_idx),
+                    "time": duration,
+                    "n_samples": len(train),
                     "n_channels": nchan,
                     "dataset": dataset.code,
                     "pipeline": name,
@@ -417,3 +429,4 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
 
     results = pd.DataFrame(results)
     return results
+
