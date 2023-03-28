@@ -69,7 +69,9 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    rpc = len(meta['session'].unique())*len(meta['run'].unique())
+    runs = meta.run.values
+    one_run = runs == 'run_0'
+    len_run = sum(one_run * 1)
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -80,7 +82,7 @@ def main(args):
     clf = define_clf(model, config)
 
     # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
+    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}

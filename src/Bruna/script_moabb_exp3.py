@@ -68,7 +68,9 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    rpc = len(meta['session'].unique())*len(meta['run'].unique())
+    runs = meta.run.values
+    one_run = runs == 'run_0'
+    len_run = sum(one_run * 1)
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -79,7 +81,7 @@ def main(args):
     clf = define_clf(model, config)
 
     # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
+    create_dataset_with_align = TransformaParaWindowsDataset(len_run)
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
@@ -103,27 +105,7 @@ def main(args):
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
-    fig, color_dict = moabb_plt.score_plot(results)
-    fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.paired_plot(results, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/paired_score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    stats = compute_dataset_statistics(results)
-    P, T = find_significant_differences(stats)
-
-    fig = moabb_plt.meta_analysis_plot(stats, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/meta_analysis_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.summary_plot(P, T)
-    fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
     print("---------------------------------------")
-
-    # return results
 
 
 # Press the green button in the gutter to run the script.

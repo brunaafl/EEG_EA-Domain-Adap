@@ -38,17 +38,16 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
 
 class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
-    def __init__(self, rpc, n_class, kw_args=None):
+    def __init__(self, len_run, kw_args=None):
         self.kw_args = kw_args
-        self.rpc = rpc
-        self.n_class = n_class
+        self.len_run = len_run
 
     def fit(self, X, y=None):
         self.y = y
         return self
 
     def transform(self, X, y=None):
-        X_EA = split_runs_EA(X.get_data(), self.rpc, self.n_class)
+        X_EA = split_runs_EA(X.get_data(), self.len_run)
 
         dataset = create_from_X_y(
             X=X_EA,
