@@ -224,11 +224,12 @@ def eval_exp2(dataset, paradigm, pipes):
     return results
 
 
-def eval_exp4(dataset, paradigm, pipes):
+def eval_exp4(dataset, paradigm, pipes, run_dir):
     """
 
     Create one model per subject and the with the others
 
+    :param run_dir:
     :param dataset : moabb.datasets
     :param paradigm : moabb.paradigms
     :param pipes : Pipeline
@@ -260,10 +261,18 @@ def eval_exp4(dataset, paradigm, pipes):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
+            cvclf = deepcopy(clf)
             t_start = time()
-            model = deepcopy(clf).fit(X[train], y[train])
+            model = cvclf.fit(X[train], y[train])
             duration = time() - t_start
             model_list.append(model)
+
+            cvclf['Net'].save_params(
+                f_params=str(run_dir / f"final_model_params_{subject}_exp4.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_exp4.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp4.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp4.pkl"),
+            )
 
             # for each test subject
             for subj in np.unique(groups[test]):
