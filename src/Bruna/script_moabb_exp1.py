@@ -4,24 +4,18 @@ Baseline script to analyse the EEG Dataset.
 """
 
 import torch
+import numpy as np
+
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.evaluations import CrossSubjectEvaluation
 from moabb.paradigms import MotorImagery, LeftRightImagery
-
-import moabb.analysis.plotting as moabb_plt
-from moabb.analysis.meta_analysis import (  # noqa: E501
-    compute_dataset_statistics,
-    find_significant_differences,
-)
-import matplotlib.pyplot as plt
-
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from moabb.utils import set_download_dir
 
-from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
+from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 
@@ -70,8 +64,11 @@ def main(args):
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
     runs = meta.run.values
+    sessions = meta.session.values
+    one_session = sessions == "session_T"
     one_run = runs == 'run_0'
-    len_run = sum(one_run * 1)
+    run_session = np.logical_and(one_session, one_run)
+    len_run = sum(run_session * 1)
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
