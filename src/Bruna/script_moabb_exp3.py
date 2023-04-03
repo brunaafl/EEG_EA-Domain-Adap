@@ -95,8 +95,7 @@ def main(args):
         pipes["EEGNetv4_Without_EA"] = pipe
 
     # Evaluation for this experiment
-    results = eval_exp3(dataset, paradigm, pipes, run_dir)
-
+    results = eval_exp3(dataset, paradigm, pipes, run_dir, model)
     # results = evaluation.process(pipes)
     print(results.head())
 
