@@ -312,7 +312,7 @@ def eval_exp4(dataset, paradigm, pipes, run_dir):
     return results, model_list
 
 
-def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, online=False):
+def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', online=False):
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
 
     groups = metadata.subject.values
@@ -336,11 +336,21 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, online=False):
 
         for name, clf in pipes.items():
 
+            if use_ses in np.unique(sessions):
+                ses = sessions[train] == use_ses
+                t_idx = train[ses]
+                X_t = X[t_idx]
+                y_t = y[t_idx]
+            else:
+                t_idx = train
+                X_t = X[t_idx]
+                y_t = y[t_idx]
+
             # Create the new model and initialize it
             cvclf = deepcopy(clf)
             # fit
             t_start = time()
-            model = cvclf.fit(X[train], y[train])
+            model = cvclf.fit(X_t, y_t)
             duration = time() - t_start
 
             # Save params
@@ -368,7 +378,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, online=False):
                 "test_session": 'session_E',
                 "score": score,
                 "time": duration,
-                "n_samples": len(train),
+                "n_samples": len(y_t),
                 "n_channels": nchan,
                 "dataset": dataset.code,
                 "pipeline": name,
@@ -395,7 +405,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, online=False):
                 test_ft_idx = np.logical_or(test_ft_idx, inter)
 
                 # Compute train data
-                train_idx = np.concatenate((train, test[test_ft_idx]))
+                train_idx = np.concatenate((t_idx, test[test_ft_idx]))
                 X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
 
