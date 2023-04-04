@@ -425,7 +425,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
                     optimizer__lr=0.0125 * 0.01,
                     optimizer__weight_decay=0,
                     batch_size=64,
-                    max_epochs=50,
+                    max_epochs=100,
                     callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
                                EpochScoring(scoring='roc_auc', on_train=True, name='train_acc', lower_is_better=False),
                                EpochScoring(scoring='roc_auc', on_train=False, name='valid_acc',
