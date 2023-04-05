@@ -333,7 +333,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
     # for each test subject
     for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
 
-        subject = groups[test[0]]
+        subject = int(groups[test[0]])
 
         for name, clf in pipes.items():
 
