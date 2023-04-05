@@ -43,5 +43,6 @@ def euclidean_alignment(data, y=None):
     else:
         print("Already aligned!")
         result = data
+        r_op = 0
 
-    return result
+    return result, r_op

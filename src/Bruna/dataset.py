@@ -148,7 +148,7 @@ def split_runs_EA(X, len_run):
     n = X.shape[0]
     for k in range(int(n / m)):
         run = X[k * m:(k + 1) * m]
-        run_EA = euclidean_alignment(run)
+        run_EA, _ = euclidean_alignment(run)
         X_aux.append(run_EA)
     X_EA = np.concatenate(X_aux)
     return X_EA
