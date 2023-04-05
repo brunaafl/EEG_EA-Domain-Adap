@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
+from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from evaluation import eval_exp3
@@ -35,7 +36,7 @@ def main(args):
     set_determinism(seed=config.seed)
     # Set download dir
     run_dir, experiment_name = set_run_dir(config, args)
-
+    set_download_dir(config.dataset.path)
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
