@@ -425,7 +425,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
                     f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
                     f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
                     f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
-                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}._exp3.pkl"), )
+                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"), )
 
                 # Freeze some layers
                 ftclf.module_.conv_temporal.weight.requires_grad = False
