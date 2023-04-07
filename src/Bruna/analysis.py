@@ -11,17 +11,19 @@ from util import set_run_dir
 from omegaconf import OmegaConf
 
 
-def statistical_analysis(args, results1, results2):
+def statistical_analysis(args, results1_csv, results2_csv):
     """
     Execute statistical analysis and plot graphs
 
+    :param results2_csv:
+    :param results1_csv:
     :param args:
-    :param results1: df
-           results from pipeline 1
-    :param results2:
-           results from pipeline 2
     :return:
     """
+
+    results1 = pd.read_csv(results1_csv)
+    results2 = pd.read_csv(results2_csv)
+
     # Set run dir
     config = OmegaConf.load(args.config_file)
     run_dir, experiment_name = set_run_dir(config, args)

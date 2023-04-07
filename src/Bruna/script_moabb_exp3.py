@@ -4,19 +4,15 @@ Baseline script to analyse the EEG Dataset.
 """
 
 import torch
+import numpy as np
 
 from omegaconf import OmegaConf
 
 from sklearn.pipeline import Pipeline
 
-import moabb.analysis.plotting as moabb_plt
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
-from moabb.analysis.meta_analysis import (  # noqa: E501
-    compute_dataset_statistics,
-    find_significant_differences,
-)
-import matplotlib.pyplot as plt
+from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from evaluation import eval_exp3
@@ -40,7 +36,7 @@ def main(args):
     set_determinism(seed=config.seed)
     # Set download dir
     run_dir, experiment_name = set_run_dir(config, args)
-
+    set_download_dir(config.dataset.path)
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
@@ -68,7 +64,12 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    rpc = len(meta['session'].unique())*len(meta['run'].unique())
+    runs = meta.run.values
+    sessions = meta.session.values
+    one_session = sessions == "session_T"
+    one_run = runs == 'run_0'
+    run_session = np.logical_and(one_session, one_run)
+    len_run = sum(run_session * 1)
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -79,7 +80,7 @@ def main(args):
     clf = define_clf(model, config)
 
     # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
+    create_dataset_with_align = TransformaParaWindowsDataset(len_run)
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
@@ -95,35 +96,14 @@ def main(args):
         pipes["EEGNetv4_Without_EA"] = pipe
 
     # Evaluation for this experiment
-    results = eval_exp3(dataset, paradigm, pipes)
-
+    results = eval_exp3(dataset, paradigm, pipes, run_dir, model, args.session, args.online)
     # results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
-    fig, color_dict = moabb_plt.score_plot(results)
-    fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.paired_plot(results, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/paired_score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    stats = compute_dataset_statistics(results)
-    P, T = find_significant_differences(stats)
-
-    fig = moabb_plt.meta_analysis_plot(stats, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/meta_analysis_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.summary_plot(P, T)
-    fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
     print("---------------------------------------")
-
-    # return results
 
 
 # Press the green button in the gutter to run the script.

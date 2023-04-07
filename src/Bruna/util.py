@@ -138,7 +138,22 @@ def parse_args():
         choices=["alignment", "no-alignment"],
     )
         
-
+    parser.add_argument(
+        "--session",
+        type=str,
+        help="select session",
+        default="both",
+        choices=["both", "session_T", "session_E"],
+    )
+        
+    parser.add_argument(
+        "--online",
+        type=int,
+        help="select online or offline",
+        default=0,
+        choices=[0, 1],
+    )
+        
     args = parser.parse_args()
     return args
 
@@ -172,6 +187,10 @@ def set_run_dir(config, args):
             + str(args.ea)
             + '-'
             + str(args.num_exp)
+            + '-'
+            + str(args.online)
+            + '-'
+            + str(args.session)
 
     )
 

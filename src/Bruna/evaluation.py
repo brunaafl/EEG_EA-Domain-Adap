@@ -1,20 +1,31 @@
 import logging
-from copy import deepcopy
-from time import time
 from typing import Union
 
+from moabb.evaluations.base import BaseEvaluation
+
+import mne
+import torch
 import numpy as np
+import pandas as pd
+
+from copy import deepcopy
+from time import time
+
 from mne.epochs import BaseEpochs
 from sklearn.metrics import get_scorer
 from sklearn.model_selection import LeaveOneGroupOut
-
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
+
 from tqdm import tqdm
 
-from moabb.evaluations.base import BaseEvaluation
-import pandas as pd
-import mne
+from braindecode import EEGClassifier
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
+from skorch.dataset import ValidSplit
+
+from pipeline import TransformaParaWindowsDatasetEA
+from dataset import split_runs_EA
+from alignment import euclidean_alignment
 
 mne.set_log_level(False)
 log = logging.getLogger(__name__)
@@ -206,11 +217,11 @@ def eval_exp2(dataset, paradigm, pipes):
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
                 res = {
-                    "time": duration,
                     "subject": subject,
                     "n_train_runs": r + 1,
                     "session": session,
                     "score": score,
+                    "time": duration,
                     "n_samples": len(train[train_idx]),
                     "n_channels": nchan,
                     "dataset": dataset.code,
@@ -224,11 +235,12 @@ def eval_exp2(dataset, paradigm, pipes):
     return results
 
 
-def eval_exp4(dataset, paradigm, pipes):
+def eval_exp4(dataset, paradigm, pipes, run_dir):
     """
 
     Create one model per subject and the with the others
 
+    :param run_dir:
     :param dataset : moabb.datasets
     :param paradigm : moabb.paradigms
     :param pipes : Pipeline
@@ -260,10 +272,18 @@ def eval_exp4(dataset, paradigm, pipes):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
+            cvclf = deepcopy(clf)
             t_start = time()
-            model = deepcopy(clf).fit(X[train], y[train])
+            model = cvclf.fit(X[train], y[train])
             duration = time() - t_start
             model_list.append(model)
+
+            cvclf['Net'].save_params(
+                f_params=str(run_dir / f"final_model_params_{subject}_exp4.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_exp4.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp4.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp4.pkl"),
+            )
 
             # for each test subject
             for subj in np.unique(groups[test]):
@@ -275,11 +295,11 @@ def eval_exp4(dataset, paradigm, pipes):
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
                 res = {
-                    "time": duration,
                     "subject": groups[train[0]],
                     "test": subj,
                     "session": session,
                     "score": score,
+                    "time": duration,
                     "n_samples": len(train),
                     "n_channels": nchan,
                     "dataset": dataset.code,
@@ -293,18 +313,7 @@ def eval_exp4(dataset, paradigm, pipes):
     return results, model_list
 
 
-def eval_exp3(dataset, paradigm, pipes, run_dir):
-    """
-
-    Fine-tuning of the Cross subject evaluated model
-
-    :param dataset : moabb.datasets
-    :param paradigm : moabb.paradigms
-    :param pipes : Pipeline
-    :return: results : df
-
-    """
-
+def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', online=False):
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
 
     groups = metadata.subject.values
@@ -323,56 +332,77 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
     results = []
     # for each test subject
     for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
-        subject = groups[test[0]]
+
+        subject = int(groups[test[0]])
 
         for name, clf in pipes.items():
 
+            if use_ses in np.unique(sessions):
+                ses = sessions[train] == use_ses
+                t_idx = train[ses]
+                X_t = X[t_idx]
+                y_t = y[t_idx]
+            else:
+                t_idx = train
+                X_t = X[t_idx]
+                y_t = y[t_idx]
+
             # Create the new model and initialize it
-            ftclf = deepcopy(clf)
+            cvclf = deepcopy(clf)
             # fit
             t_start = time()
-            model = ftclf.fit(X[train], y[train])
+            model = cvclf.fit(X_t, y_t)
             duration = time() - t_start
 
-            ftclf['Net'].save_params(
-                f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
-                f_history=str(run_dir/f"final_model_history_{subject}.json"),
-                f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
-                f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),
+            # Save params
+            cvclf['Net'].save_params(
+                f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"),
             )
 
-            # Predict on the test data
-            # First, using 0 runs
+            # Define test set
             ix = sessions[test] == 'session_E'
             X_test = X[test[ix]]
             y_test = y[test[ix]]
-            score = _score(model, X_test, y_test, scorer)
 
-            nchan = (
-                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-            )
+            # Predict on the test data if offline
+            # If online and EA, you have no data to align the test here
+            if not online:
+                # First, using 0 runs
+                score = _score(model, X_test, y_test, scorer)
 
-            res = {
-                "time": duration,
-                "subject": groups[test[0]],
-                "n_test_runs": 0,
-                "test_session": 'session_E',
-                "score": score,
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "dataset": dataset.code,
-                "pipeline": name,
-            }
-            results.append(res)
+                nchan = (
+                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                )
+                len_train = len(y_t)
 
-            # Save the scorer
+                res = {
+                    "subject": groups[test[0]],
+                    "n_test_runs": 0,
+                    "test_session": 'session_E',
+                    "score": score,
+                    "time": duration,
+                    "n_samples": len_train,
+                    "n_channels": nchan,
+                    "dataset": dataset.code,
+                    "pipeline": name,
+                }
+                results.append(res)
+
+            # Prepare for fine tuning
             tftr0 = runs[test] == 'run_0'
             tfts = sessions[test] == 'session_T'
             test_ft_idx = np.logical_and(tftr0, tfts)
 
+            len_run = sum(test_ft_idx * 1)
+
+            X_test = X_test.get_data()
+
             # now, add the runs in the train set
-            # for run in np.unique(runs):
             for k in range(len(np.unique(runs))):
+
                 # runs to put in the training
                 tftr = runs[test] == f"run_{k}"
                 # find the session_T part of the run
@@ -381,34 +411,62 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
                 test_ft_idx = np.logical_or(test_ft_idx, inter)
 
                 # Compute train data
-                train_idx = np.concatenate((train, test[test_ft_idx]))
-                X_train = X[train_idx]
+                train_idx = np.concatenate((t_idx, test[test_ft_idx]))
+                X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
+
+                # Create a new model initialized with the saved params
+                ftclf = create_clf_ft(nn_model, 100)
+
+                ftclf.initialize()
+
+                # Initialize with the saved parameters
+                ftclf.load_params(
+                    f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
+                    f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
+                    f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
+                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"), )
+
+                # Freeze some layers
+                ftclf.module_.conv_temporal.weight.requires_grad = False
+                ftclf.module_.bnorm_temporal.weight.requires_grad = False
+                ftclf.module_.conv_spatial.weight.requires_grad = False
+                ftclf.module_.bnorm_1.weight.requires_grad = False
+                ftclf.module_.conv_separable_depth.weight.requires_grad = False
+                ftclf.module_.conv_separable_point.weight.requires_grad = False
+                ftclf.module_.bnorm_2.weight.requires_grad = False
+
+                # Euclidean Alignment if needed
+                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                    if online:
+                        # Align train subjects
+                        X_train[:len_train] = split_runs_EA(X_train[:len_train], len_run)
+                        # Align all aux data (fine-tuning data)
+                        X_train[len_train:], r_op = euclidean_alignment(X_train[len_train:])
+                        # Use ref matrix to align test data
+                        X_test_ = np.matmul(r_op, X_test)
+
+                    else:
+                        # Align normally train and test
+                        X_train = split_runs_EA(X_train, len_run)
+                        X_test_ = split_runs_EA(X_test, len_run)
 
                 # Fit
                 t_start = time()
-                ftmodel = deepcopy(ftclf).fit(X_train, y_train)
-                ftmodel['Net'].load_params(
-                    f_params=str(run_dir/f"final_model_params_{subject}.pkl"),
-                    f_history=str(run_dir/f"final_model_history_{subject}.json"),
-                    f_criterion=str(run_dir/f"final_model_criterion_{subject}.pkl"),
-                    f_optimizer=str(run_dir/f"final_model_optimizer_{subject}.pkl"),)
-                ftclf['Net'].module_.conv_temporal.requires_grad_(False)
-                # continuar aqui
-
-
+                ftmodel = ftclf.fit(X_train, y_train)
                 duration = time() - t_start
 
                 # Predict on the test set
-                score = _score(ftmodel, X_test, y_test, scorer)
+                score = _score(ftmodel, X_test_, y_test, scorer)
+                print(score)
 
                 res = {
-                    "time": duration,
                     "subject": groups[test[0]],
                     "n_test_runs": k + 1,
                     "test_session": 'session_E',
                     "score": score,
-                    "n_samples": len(train_idx),
+                    "time": duration,
+                    "n_samples": len(y_train),
                     "n_channels": nchan,
                     "dataset": dataset.code,
                     "pipeline": name,
@@ -417,3 +475,33 @@ def eval_exp3(dataset, paradigm, pipes, run_dir):
 
     results = pd.DataFrame(results)
     return results
+
+
+def create_clf_ft(model, max_epochs):
+    cuda = (
+        torch.cuda.is_available()
+    )  # check if GPU is available, if True chooses to use it
+    device = "cuda" if cuda else "cpu"
+    if cuda:
+        torch.backends.cudnn.benchmark = True
+
+    ftclf = EEGClassifier(
+        deepcopy(model),
+        criterion=torch.nn.NLLLoss,
+        optimizer=torch.optim.AdamW,
+        train_split=ValidSplit(0.20, random_state=42),  # using valid_set for validation
+        optimizer__lr=0.0125 * 0.01,
+        optimizer__weight_decay=0,
+        batch_size=64,
+        max_epochs=max_epochs,
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
+                   EpochScoring(scoring='roc_auc', on_train=True, name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='roc_auc', on_train=False, name='valid_acc',
+                                lower_is_better=False)],
+        device=device,
+        verbose=1,
+    )
+
+    ftclf.initialize()
+
+    return ftclf

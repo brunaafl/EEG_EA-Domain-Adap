@@ -142,13 +142,14 @@ def ft_test_data(test_subj, subject_ids, run, Data_subjects):
     return Test_runs, Test_T, Test_E
 
 
-def split_runs_EA(X, rpc, n_classes):
+def split_runs_EA(X, len_run):
     X_aux = []
-    m = rpc * n_classes
+    m = len_run
     n = X.shape[0]
     for k in range(int(n / m)):
         run = X[k * m:(k + 1) * m]
-        run_EA = euclidean_alignment(run)
+        run_EA, _ = euclidean_alignment(run)
         X_aux.append(run_EA)
     X_EA = np.concatenate(X_aux)
     return X_EA
+
