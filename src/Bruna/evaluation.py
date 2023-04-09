@@ -403,6 +403,8 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
             # now, add the runs in the train set
             for k in range(len(np.unique(runs))):
 
+                X_test_ = X_test
+
                 # runs to put in the training
                 tftr = runs[test] == f"run_{k}"
                 # find the session_T part of the run
@@ -458,7 +460,6 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
 
                 # Predict on the test set
                 score = _score(ftmodel, X_test_, y_test, scorer)
-                print(score)
 
                 res = {
                     "subject": groups[test[0]],
