@@ -79,8 +79,7 @@ def main(args):
     # Create Classifier
     clf = define_clf(model, config)
 
-    # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDataset(len_run)
+    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
