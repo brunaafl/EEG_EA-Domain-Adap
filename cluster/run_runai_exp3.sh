@@ -2,7 +2,8 @@
 set -ex # Enable 'set -e' (exit on error) and 'set -x' (debugging) options
 
 TAG=eeg_ea
-types=("alignment" "no-alignment" )
+types=("alignment")
+# "no-alignment" )
 datasets=("Cho2017" "Schirrmeister2017" "PhysionetMI")
 datasets=('BNCI2014001')
 
@@ -10,7 +11,7 @@ sessions=('session_T' 'session_E' 'both')
 for session in "${sessions[@]}"; do
 for type in "${types[@]}"; do
     for dataset in "${datasets[@]}"; do
-    	for online in {0..1}; do
+    	for online in {0..0}; do
 	string=exp3-ea-${dataset}-${type}-${session}-${online}
 	declare -l string
         string=${string//_/} # removes all underscores from the string
