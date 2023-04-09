@@ -347,6 +347,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
                 X_t = X[t_idx]
                 y_t = y[t_idx]
 
+            len_train = len(y_t)
             # Create the new model and initialize it
             cvclf = deepcopy(clf)
             # fit
@@ -376,7 +377,6 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
                 nchan = (
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
-                len_train = len(y_t)
 
                 res = {
                     "subject": groups[test[0]],
