@@ -459,8 +459,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
                 duration = time() - t_start
 
                 # Predict on the test set
-                score = _score(ftmodel, X_test, y_test, scorer)
-                print(score)
+                score = _score(ftmodel, X_test_, y_test, scorer)
                 nchan = (
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
