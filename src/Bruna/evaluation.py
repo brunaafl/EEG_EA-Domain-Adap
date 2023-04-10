@@ -368,30 +368,47 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
             X_test = X[test[ix]]
             y_test = y[test[ix]]
 
+            # Number of channels
+            nchan = (
+                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+            )
+
             # Predict on the test data if offline
             # If online and EA, you have no data to align the test here
-            if not online:
+            if online:
+                ftclf = create_clf_ft(nn_model, 0)
+                ftclf.initialize()
+
+                # Initialize with the saved parameters
+                ftclf.load_params(
+                    f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
+                    f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
+                    f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
+                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"), )
+
+                ftmodel = ftclf.fit(X_t, y_t)
+                # First without EA
+                score = _score(ftmodel, X_test.get_data(), y_test, scorer)
+
+            else:
                 # First, using 0 runs
                 score = _score(model, X_test, y_test, scorer)
 
-                nchan = (
-                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                )
+            # Add the score to the dataframe
+            res = {
+                "subject": groups[test[0]],
+                "n_test_runs": 0,
+                "test_session": 'session_E',
+                "score": score,
+                "time": duration,
+                "n_samples": len_train,
+                "n_channels": nchan,
+                "dataset": dataset.code,
+                "pipeline": name,
+            }
+            results.append(res)
 
-                res = {
-                    "subject": groups[test[0]],
-                    "n_test_runs": 0,
-                    "test_session": 'session_E',
-                    "score": score,
-                    "time": duration,
-                    "n_samples": len_train,
-                    "n_channels": nchan,
-                    "dataset": dataset.code,
-                    "pipeline": name,
-                }
-                results.append(res)
-
-            # Prepare for fine tuning
+            # Prepare for fine-tuning
             tftr0 = runs[test] == 'run_0'
             tfts = sessions[test] == 'session_T'
             test_ft_idx = np.logical_and(tftr0, tfts)
@@ -460,9 +477,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
 
                 # Predict on the test set
                 score = _score(ftmodel, X_test_, y_test, scorer)
-                nchan = (
-                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                )
+
                 res = {
                     "subject": groups[test[0]],
                     "n_test_runs": k + 1,
