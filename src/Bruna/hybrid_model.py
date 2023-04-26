@@ -39,6 +39,14 @@ import mne
 
 import pdb
 
+from torchviz import make_dot
+
+import random
+
+import traceback
+
+from torch.utils.data.dataloader import default_collate
+
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
 
 	temp_model = EEGNetv4(
@@ -56,7 +64,6 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 
 	return nn.Sequential(*(list(temp_model.children())[start:end]))
 
-
 class HybridModel(nn.Module):
 	def __init__(self, num_models, n_chans, n_classes, input_window_samples, config=None):
 		super(HybridModel, self).__init__()
@@ -67,20 +74,25 @@ class HybridModel(nn.Module):
 			self.unique_modules.append(self.init_unique_modules(n_chans, n_classes, input_window_samples, config))
 
 	def init_unique_modules(self, n_chans, n_classes, input_window_samples, config):
-		unique_head = nn.Sequential(gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, end=5, remove_bn=False))
+		unique_head = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, end=5, remove_bn=False)
 		# , nn.LayerNorm((16, 1, 1126), elementwise_affine=False)
 		return unique_head
 
 	def split_input(self, X):
-		return(np.split(X, self.num_models, axis=1))
+		return torch.split(X, int(X.shape[1]/self.num_models), dim=1)
 
 	def forward(self, x):
 		inputs = self.split_input(x)
 		out = []
 		for i, model_input in enumerate(inputs):
-			temp = self.shared_modules(self.unique_modules[i](model_input))
-			out.append(temp)
-		return torch.stack(out)
+			temp_unique = self.unique_modules[i](model_input)
+			temp_shared = self.shared_modules(temp_unique)
+			#pdb.set_trace()
+			out.append(temp_shared)
+		result = torch.stack(out)
+		if result.requires_grad:
+			result.retain_grad()
+		return result
 
 	def predict(self, X):
 		return [out.argmax(axis=1) for out in self.forward(X)]
@@ -92,13 +104,40 @@ class HybridClassifier(EEGClassifier):
 		#	eps = torch.finfo(y_pred.dtype).eps
 		#	y_pred = torch.log(y_pred + eps)
 		y_true = to_tensor(y_true, device=self.device)
-		loss = None
+		losses = []
 		for subject in range(y_pred.shape[0]):
-			if loss == None:
-				loss = self.criterion_(y_pred[subject, :, :], y_true[:, subject])
-			else:
-				loss += self.criterion_(y_pred[subject, :, :], y_true[:, subject])
+			subject_slice = torch.select(y_pred, 0, subject)
+			if y_pred.requires_grad:
+				subject_slice.retain_grad()
+			losses.append(self.criterion_(subject_slice, y_true[:, subject]))
+
+		loss = sum(losses) / self.module.num_models
+
+		#pdb.set_trace()
+		#loss.backward()
+		make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
+		#pdb.set_trace()
+
 		return loss
+
+def scoring_test(model, x, y_true):
+	out = model.forward_iter()
+	y_preds = [z for z in out]
+	print(test)
+	# TODO: reshape as preds e os trues para analise
+	pdb.set_trace()
+	for subject in range(y_pred.shape[0]):
+		subject_slice = np.exp(torch.select(y_pred, 0, subject).detach().numpy())
+		true_slice = y_true[:, subject]
+		predictions = np.argmax(subject_slice, axis=1)
+		pdb.set_trace()
+
+def debug(x, **kwargs):
+	#print("debug")
+	#traceback.print_stack()
+	#pdb.set_trace()
+	out = default_collate(x)
+	return out
 
 def define_hybrid_clf(model, config):
     """
@@ -118,6 +157,8 @@ def define_hybrid_clf(model, config):
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    lrscheduler = LRScheduler(policy='StepLR', step_size=30, gamma=0.1)
+
     clf = HybridClassifier(
         model,
         criterion=torch.nn.NLLLoss,
@@ -125,17 +166,22 @@ def define_hybrid_clf(model, config):
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
+        iterator_train__collate_fn=debug,
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-                   EpochScoring(scoring='accuracy', on_train=True,
-                                name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False,
-                                name='valid_acc', lower_is_better=False)],
+        EpochScoring(scoring=scoring_test, on_train=True, name='train_acc', lower_is_better=False)], #, lrscheduler],
         device=device,
         verbose=1,
     )
     return clf
+
+'''
+EpochScoring(scoring='accuracy', on_train=True,
+                                name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False,
+                                name='valid_acc', lower_is_better=False)
+'''
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 	def __init__(self, kw_args=None):
@@ -158,7 +204,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 		n_subjects = len(subjects)
 		n_trials_per_subject = len(subjects[list(subjects.keys())[0]])
 		ch_names = [self.info["ch_names"][i] + f"_s{k}" for i in range(len(self.info["ch_names"])) for k in subjects.keys()]
-		print(ch_names)
 
 		new_trials = []
 		for trial_i in range(n_trials_per_subject):
@@ -181,6 +226,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 			window_stride_samples=len(new_trials[0]),
 			drop_last_window=False
 		)
+
 
 		return windows_dataset
 

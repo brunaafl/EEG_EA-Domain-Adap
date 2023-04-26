@@ -27,6 +27,9 @@ from util import parse_args, set_determinism, set_run_dir
 
 from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf
 
+
+import torchinfo
+
 """
 For the joint model
 """
@@ -78,6 +81,8 @@ def main(args):
     if cuda:
         model.cuda()
 
+    print(torchinfo.summary(model, input_size=(64, 176, 1001)))
+
     # Create Classifier
     clf = define_hybrid_clf(model, config)
 
@@ -110,7 +115,8 @@ def main(args):
         n_jobs=-1,
     )
 
-    results = evaluation.process(pipes)
+    with torch.autograd.set_detect_anomaly(True):
+        results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
