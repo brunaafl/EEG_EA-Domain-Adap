@@ -2,8 +2,9 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from skorch.dataset import ValidSplit
+from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
+from skorch.callbacks.scoring import _cache_net_forward_iter
 from skorch.utils import to_tensor
 
 import numpy as np
@@ -24,6 +25,7 @@ from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import get_scorer
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
+from sklearn.metrics import accuracy_score
 
 from tqdm import tqdm
 
@@ -120,68 +122,102 @@ class HybridClassifier(EEGClassifier):
 
 		return loss
 
-def scoring_test(model, x, y_true):
-	out = model.forward_iter()
-	y_preds = [z for z in out]
-	print(test)
-	# TODO: reshape as preds e os trues para analise
-	pdb.set_trace()
-	for subject in range(y_pred.shape[0]):
-		subject_slice = np.exp(torch.select(y_pred, 0, subject).detach().numpy())
+
+class HybridScoring(EpochScoring):
+	def on_epoch_begin(self, net, dataset_train, dataset_valid, **kwargs):
+		self.y_preds_ = []
+		self.y_trues_ = []
+		for subject_i in range(net.module.num_models):
+			self.y_preds_.append([])
+
+	def on_batch_end(
+			self, net, batch, y_pred, training, **kwargs):
+		if not self.use_caching or training != self.on_train:
+			return
+
+		_X, y = unpack_data(batch)
+		self.y_trues_.append(y)
+		for subject_i in range(net.module.num_models):
+			self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
+
+	def on_epoch_end(
+			self,
+			net,
+			dataset_train,
+			dataset_valid,
+			**kwargs):
+		X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid)
+		
+		unwrapped_y_pred = []
+		for subject_i in range(net.module.num_models):
+			unwrapped_y_pred.append(torch.vstack(y_pred[subject_i]))
+
+		with _cache_net_forward_iter(net, self.use_caching, unwrapped_y_pred) as cached_net:
+			current_score = self._scoring(cached_net, X_test, y_test)
+
+		self._record_score(net.history, current_score)
+
+def get_subject_acc_scorer(subject):
+	def scoring_for_subject_i(model, x, y_true):
+		out = model.forward_iter()
+		y_preds = [z for z in out]
+		subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
 		true_slice = y_true[:, subject]
 		predictions = np.argmax(subject_slice, axis=1)
-		pdb.set_trace()
+		return accuracy_score(true_slice, predictions)
+	return scoring_for_subject_i
 
-def debug(x, **kwargs):
-	#print("debug")
-	#traceback.print_stack()
-	#pdb.set_trace()
-	out = default_collate(x)
-	return out
+def average_acc_scoring(model, x, y_true):
+	out = model.forward_iter()
+	y_preds = [z for z in out]
+	accuracies_per_subject = []
+	for subject in range(len(y_preds)):
+		subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
+		true_slice = y_true[:, subject]
+		predictions = np.argmax(subject_slice, axis=1)
+		accuracies_per_subject.append(accuracy_score(true_slice, predictions))
+	return sum(accuracies_per_subject)/len(accuracies_per_subject)
+
 
 def define_hybrid_clf(model, config):
-    """
-    Transform the pytorch model into classifier object to be used in the training
-    Parameters
-    ----------
-    model: pytorch model
-    device: cuda or cpu
-    config: dict with the configuration parameters
-    Returns
-    -------
-    clf: skorch classifier
-    """
-    weight_decay = config.train.weight_decay
-    batch_size = config.train.batch_size
-    lr = config.train.lr
-    patience = config.train.patience
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+	"""
+	Transform the pytorch model into classifier object to be used in the training
+	Parameters
+	----------
+	model: pytorch model
+	device: cuda or cpu
+	config: dict with the configuration parameters
+	Returns
+	-------
+	clf: skorch classifier
+	"""
+	weight_decay = config.train.weight_decay
+	batch_size = config.train.batch_size
+	lr = config.train.lr
+	patience = config.train.patience
+	device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    lrscheduler = LRScheduler(policy='StepLR', step_size=30, gamma=0.1)
+	lrscheduler = LRScheduler(policy='StepLR', step_size=30, gamma=0.1)
 
-    clf = HybridClassifier(
-        model,
-        criterion=torch.nn.NLLLoss,
-        optimizer=torch.optim.AdamW,
-        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
-        optimizer__lr=lr,
-        optimizer__weight_decay=weight_decay,
-        iterator_train__collate_fn=debug,
-        batch_size=batch_size,
-        max_epochs=config.train.n_epochs,
-        callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-        EpochScoring(scoring=scoring_test, on_train=True, name='train_acc', lower_is_better=False)], #, lrscheduler],
-        device=device,
-        verbose=1,
-    )
-    return clf
+	scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i}_valid_acc', lower_is_better=False) for i in range(model.num_models)]
 
-'''
-EpochScoring(scoring='accuracy', on_train=True,
-                                name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False,
-                                name='valid_acc', lower_is_better=False)
-'''
+	clf = HybridClassifier(
+		model,
+		criterion=torch.nn.NLLLoss,
+		optimizer=torch.optim.AdamW,
+		train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
+		optimizer__lr=lr,
+		optimizer__weight_decay=weight_decay,
+		batch_size=batch_size,
+		max_epochs=config.train.n_epochs,
+		callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+		HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc', lower_is_better=False),
+		HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc', lower_is_better=False)] + scoring_callbacks, #, lrscheduler],
+		device=device,
+		verbose=1,
+	)
+	return clf
+
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 	def __init__(self, kw_args=None):
@@ -233,7 +269,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 	def __sklearn_is_fitted__(self):
 		"""Return True since Transfomer is stateless."""
 		return True
-
 
 
 class HybridEvaluation(BaseEvaluation):
