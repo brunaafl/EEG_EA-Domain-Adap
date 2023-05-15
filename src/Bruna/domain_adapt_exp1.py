@@ -42,6 +42,7 @@ def main(args):
     args : object
     """
     config = OmegaConf.load(args.config_file)
+    eval_config = OmegaConf.load(args.eval_config_file)
     # Setting run information
     set_determinism(seed=config.seed)
     # Set download dir
@@ -98,6 +99,7 @@ def main(args):
     pipe = Pipeline([("Hybrid_adapter", hybrid_adapter),
                      ("Net", clone(clf))])
 
+
     if args.ea == 'alignment':
         pipes["EEGNetv4_EA"] = pipe_with_align
     else:
@@ -113,6 +115,7 @@ def main(args):
         return_epochs=True,
         hdf5_path=run_dir,
         n_jobs=-1,
+        eval_config=eval_config,
     )
 
     with torch.autograd.set_detect_anomaly(True):

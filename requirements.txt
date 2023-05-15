@@ -11,3 +11,4 @@ pathlib
 mne
 tqdm
 matplotlib
+torchviz

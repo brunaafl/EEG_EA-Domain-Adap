@@ -1,6 +1,7 @@
+import copy
+
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
 
 from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
@@ -17,22 +18,19 @@ from braindecode.preprocessing import create_fixed_length_windows
 
 from sklearn.model_selection import (
 	LeaveOneGroupOut,
-	StratifiedKFold,
-	StratifiedShuffleSplit,
-	cross_val_score,
 )
 from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import get_scorer
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
 
 from tqdm import tqdm
 
 from moabb.evaluations.base import BaseEvaluation
 
 from time import time
-from typing import Union
 
 from copy import deepcopy
 
@@ -43,11 +41,10 @@ import pdb
 
 from torchviz import make_dot
 
-import random
+from train import define_clf
 
-import traceback
+from pipeline import TransformaParaWindowsDataset
 
-from torch.utils.data.dataloader import default_collate
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
 
@@ -69,14 +66,16 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 class HybridModel(nn.Module):
 	def __init__(self, num_models, n_chans, n_classes, input_window_samples, config=None):
 		super(HybridModel, self).__init__()
+		self._args = (n_chans, n_classes, input_window_samples)
+		self.config = config
 		self.num_models = num_models
 		self.shared_modules = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=6)
 		self.unique_modules = nn.ModuleList()
 		for model in range(num_models):
-			self.unique_modules.append(self.init_unique_modules(n_chans, n_classes, input_window_samples, config))
+			self.unique_modules.append(self.init_unique_modules(*self._args))
 
-	def init_unique_modules(self, n_chans, n_classes, input_window_samples, config):
-		unique_head = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, end=5, remove_bn=False)
+	def init_unique_modules(self, n_chans, n_classes, input_window_samples):
+		unique_head = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, self.config, end=5, remove_bn=False)
 		# , nn.LayerNorm((16, 1, 1126), elementwise_affine=False)
 		return unique_head
 
@@ -99,12 +98,27 @@ class HybridModel(nn.Module):
 	def predict(self, X):
 		return [out.argmax(axis=1) for out in self.forward(X)]
 
+	def generate_branch_model(self):
+		new_layers = self.init_unique_modules(*self._args)
+		cloned_layers = copy.deepcopy(self.shared_modules)
+		return SpecializedModel(new_layers, cloned_layers)
+
+
+
+class SpecializedModel(nn.Module):
+	def __init__(self, unique_modules, cloned_modules):
+		super(SpecializedModel, self).__init__()
+		self.shared_modules = cloned_modules
+		self.unique_modules = unique_modules
+
+	def forward(self, x):
+		x = self.unique_modules(x)
+		x = self.shared_modules(x)
+		return x
+
 
 class HybridClassifier(EEGClassifier):
 	def get_loss(self, y_pred, y_true, *args, **kwargs):
-		#if isinstance(self.criterion_, nn.NLLLoss):
-		#	eps = torch.finfo(y_pred.dtype).eps
-		#	y_pred = torch.log(y_pred + eps)
 		y_true = to_tensor(y_true, device=self.device)
 		losses = []
 		for subject in range(y_pred.shape[0]):
@@ -115,10 +129,7 @@ class HybridClassifier(EEGClassifier):
 
 		loss = sum(losses) / self.module.num_models
 
-		#pdb.set_trace()
-		#loss.backward()
 		make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
-		#pdb.set_trace()
 
 		return loss
 
@@ -185,7 +196,6 @@ def define_hybrid_clf(model, config):
 	Parameters
 	----------
 	model: pytorch model
-	device: cuda or cpu
 	config: dict with the configuration parameters
 	Returns
 	-------
@@ -197,7 +207,7 @@ def define_hybrid_clf(model, config):
 	patience = config.train.patience
 	device = "cuda" if torch.cuda.is_available() else "cpu"
 
-	lrscheduler = LRScheduler(policy='StepLR', step_size=30, gamma=0.1)
+	lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
 	scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i}_valid_acc', lower_is_better=False) for i in range(model.num_models)]
 
@@ -211,8 +221,9 @@ def define_hybrid_clf(model, config):
 		batch_size=batch_size,
 		max_epochs=config.train.n_epochs,
 		callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+				   lrscheduler,
 		HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc', lower_is_better=False),
-		HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc', lower_is_better=False)] + scoring_callbacks, #, lrscheduler],
+		HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc', lower_is_better=False)] + scoring_callbacks,
 		device=device,
 		verbose=1,
 	)
@@ -272,6 +283,9 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
 
 class HybridEvaluation(BaseEvaluation):
+	def __init__(self, *args, eval_config=None, **kwargs):
+		super(HybridEvaluation, self).__init__(*args, **kwargs)
+		self.eval_config = eval_config
 	def is_valid(self, dataset):
 		return len(dataset.subject_list) > 1	
 	def evaluate(self, dataset, pipelines, grid_search):
@@ -319,7 +333,14 @@ class HybridEvaluation(BaseEvaluation):
 				# we eval on each session
 				for session in np.unique(sessions[test]):
 					ix = sessions[test] == session
-					score = _score(model, X[test[ix]], y[test[ix]], scorer)
+					eval_model = model["Net"].module.generate_branch_model()
+					eval_classifier = define_clf(eval_model, self.eval_config)
+					create_dataset = TransformaParaWindowsDataset()
+					eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
+
+					eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
+
+					score = _score(eval_clf, X[test[ix]], y[test[ix]], scorer)
 
 					nchan = (
 						X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]

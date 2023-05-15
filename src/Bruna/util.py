@@ -145,13 +145,20 @@ def parse_args():
         default="both",
         choices=["both", "session_T", "session_E"],
     )
-        
+
     parser.add_argument(
         "--online",
         type=int,
         help="select online or offline",
         default=0,
         choices=[0, 1],
+    )
+
+    parser.add_argument(
+        "--eval_config_file",
+        type=str,
+        default="config/eval_config.yaml",
+        help="Path to config file with all the evaluation parameters needed (only for hybrid domain adaptation)",
     )
         
     args = parser.parse_args()
