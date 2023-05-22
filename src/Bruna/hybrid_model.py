@@ -45,6 +45,8 @@ from train import define_clf
 
 from pipeline import TransformaParaWindowsDataset
 
+from dataset import split_runs_EA
+
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
 
@@ -231,8 +233,10 @@ def define_hybrid_clf(model, config):
 
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
-	def __init__(self, kw_args=None):
+	def __init__(self, EA_len_run=None, kw_args=None):
 		self.kw_args = kw_args
+		self.use_EA = EA_len_run != None
+		self.EA_len_run = EA_len_run
 
 	def fit(self, X, y=None, subject_groups=None, info=None, labels=None):
 		self.labels = labels
@@ -241,6 +245,8 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 		return self
 
 	def transform(self, X, y=None):
+		if self.use_EA:
+			X = split_runs_EA(X.get_data(), self.EA_len_run)
 		subjects = {i:[] for i in np.unique(self.groups)}
 
 		for index, trial in enumerate(X):
@@ -330,30 +336,33 @@ class HybridEvaluation(BaseEvaluation):
 				model = deepcopy(clf).fit(X[train], None, Hybrid_adapter__labels=y[train], Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 				duration = time() - t_start
 
-				# we eval on each session
-				for session in np.unique(sessions[test]):
-					ix = sessions[test] == session
-					eval_model = model["Net"].module.generate_branch_model()
-					eval_classifier = define_clf(eval_model, self.eval_config)
-					create_dataset = TransformaParaWindowsDataset()
-					eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
+				ix = sessions[test] == 'session_T'
 
-					eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
+				eval_model = model["Net"].module.generate_branch_model()
+				eval_classifier = define_clf(eval_model, self.eval_config)
+				create_dataset = TransformaParaWindowsDataset()
+				eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
-					score = _score(eval_clf, X[test[ix]], y[test[ix]], scorer)
+				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
 
-					nchan = (
-						X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-					)
-					res = {
-						"time": duration,
-						"dataset": dataset,
-						"subject": subject,
-						"session": session,
-						"score": score,
-						"n_samples": len(train),
-						"n_channels": nchan,
-						"pipeline": name,
-					}
+				ix_eval = sessions[test] == 'session_E'
 
-					yield res
+				score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
+				pdb.set_trace()
+				nchan = (
+					X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+				)
+				res = {
+					"time": duration,
+					"dataset": dataset,
+					"subject": subject,
+					"session": 'session_E',
+					"score": score,
+					"n_samples": len(train),
+					"n_channels": nchan,
+					"pipeline": name,
+				}
+
+				print(res)
+
+				yield res

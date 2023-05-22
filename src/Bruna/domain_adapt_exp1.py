@@ -30,6 +30,8 @@ from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform
 
 import torchinfo
 
+import numpy as np
+
 """
 For the joint model
 """
@@ -90,11 +92,19 @@ def main(args):
     create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
     create_dataset = TransformaParaWindowsDataset()
 
+    runs = meta.run.values
+    sessions = meta.session.values
+    one_session = sessions == "session_T"
+    one_run = runs == 'run_0'
+    run_session = np.logical_and(one_session, one_run)
+    len_run = sum(run_session * 1)
+
     hybrid_adapter = HybridAggregateTransform()
+    hybrid_adapter_EA = HybridAggregateTransform(EA_len_run=len_run)
 
     pipes = {}
 
-    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
+    pipe_with_align = Pipeline([("Hybrid_adapter", hybrid_adapter_EA),
                                 ("Net", clone(clf))])
     pipe = Pipeline([("Hybrid_adapter", hybrid_adapter),
                      ("Net", clone(clf))])
