@@ -341,6 +341,7 @@ class HybridEvaluation(BaseEvaluation):
 				eval_model = model["Net"].module.generate_branch_model()
 				eval_classifier = define_clf(eval_model, self.eval_config)
 				create_dataset = TransformaParaWindowsDataset()
+				# TODO: Ver se aqui tambem precisa de alinhamento
 				eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
 				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
@@ -348,7 +349,6 @@ class HybridEvaluation(BaseEvaluation):
 				ix_eval = sessions[test] == 'session_E'
 
 				score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
-				pdb.set_trace()
 				nchan = (
 					X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
 				)
