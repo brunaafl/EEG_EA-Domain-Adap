@@ -20,7 +20,7 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
 from braindecode import EEGClassifier
-from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
+from skorch.callbacks import EarlyStopping, EpochScoring
 from skorch.dataset import ValidSplit
 
 from pipeline import TransformaParaWindowsDatasetEA
@@ -125,7 +125,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
                         )
                         res = {
                             "time": duration,
-                            "dataset": dataset,
+                            "dataset": dataset.code,
                             "subject": groups[train[0]],
                             "test": subject,
                             "session": session,
@@ -202,7 +202,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
 
                 res = {
                     "time": duration,
-                    "dataset": dataset,
+                    "dataset": dataset.code,
                     "subject": subject,
                     "session": session,
                     "score": score,
@@ -223,7 +223,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
 
             if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
                 Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials)
+                _, r_op = euclidean_alignment(Aux_trials.get_data())
                 # Use ref matrix to align test data
                 X_t = np.matmul(r_op, Test.get_data())
 
@@ -233,7 +233,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
             # If without alignment, scores don't change
             res = {
                 "time": duration,
-                "dataset": dataset,
+                "dataset": dataset.code,
                 "subject": subject,
                 "session": session,
                 "score": score,
@@ -357,7 +357,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
 
             res = {
                 "time": duration,
-                "dataset": dataset,
+                "dataset": dataset.code,
                 "subject": subject,
                 "session": 'both',
                 "score": score,
@@ -446,18 +446,18 @@ def eval_exp2(dataset, paradigm, pipes):
                 nchan = (
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
+
                 res = {
+                    "time": duration,
+                    "dataset": dataset.code,
                     "subject": subject,
                     "n_train_runs": r + 1,
                     "session": session,
                     "score": score,
-                    "time": duration,
                     "n_samples": len(train[train_idx]),
                     "n_channels": nchan,
-                    "dataset": dataset.code,
                     "pipeline": name,
                 }
-
                 results.append(res)
 
     results = pd.DataFrame(results)
@@ -525,14 +525,14 @@ def eval_exp4(dataset, paradigm, pipes, run_dir):
                     X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
                 )
                 res = {
+                    "time": duration,
+                    "dataset": dataset.code,
                     "subject": groups[train[0]],
                     "test": subj,
                     "session": session,
                     "score": score,
-                    "time": duration,
                     "n_samples": len(train),
                     "n_channels": nchan,
-                    "dataset": dataset.code,
                     "pipeline": name,
                 }
 
