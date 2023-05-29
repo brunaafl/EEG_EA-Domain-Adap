@@ -141,6 +141,236 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
+def shared_model(dataset, paradigm, pipes, run_dir):
+    """
+
+    Create one model per subject and the with the others
+
+    :param run_dir:
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
+             model_list: list of clf
+
+    """
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    results = []
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+
+        subject = groups[test[0]]
+
+        # iterate over each pipeline
+        for name, clf in pipes.items():
+
+            cvclf = deepcopy(clf)
+            t_start = time()
+            model = cvclf.fit(X[train], y[train])
+            duration = time() - t_start
+
+            cvclf['Net'].save_params(
+                f_params=str(run_dir / f"final_model_params_{subject}_exp1.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_exp1.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp1.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp1.pkl"),
+            )
+
+            nchan = (
+                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+            )
+            # for each test subject
+            # Keep this division?
+            for session in np.unique(sessions[test]):
+                # First, the offline test
+                ix = sessions[test] == session
+                score = _score(model, X[test[ix]], y[test[ix]], scorer)
+
+                res = {
+                    "time": duration,
+                    "dataset": dataset,
+                    "subject": subject,
+                    "session": session,
+                    "score": score,
+                    "type": "Offline",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                }
+
+                results.append(res)
+
+            test_runs, aux_run = select_run(runs, sessions, test)
+            len_run = sum(aux_run * 1)
+
+            Test = X[test[test_runs]]
+            y_t = y[test[test_runs]]
+
+            if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                Aux_trials = X[test[aux_run]]
+                _, r_op = euclidean_alignment(Aux_trials)
+                # Use ref matrix to align test data
+                X_t = np.matmul(r_op, Test.get_data())
+
+                # Compute score
+                score = _score(model["Net"], X_t, y_t, scorer)
+
+            # If without alignment, scores don't change
+            res = {
+                "time": duration,
+                "dataset": dataset,
+                "subject": subject,
+                "session": session,
+                "score": score,
+                "type": "Online",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "pipeline": name,
+            }
+            results.append(res)
+
+    results = pd.DataFrame(results)
+
+    return results
+
+
+def select_run(runs, sessions, test):
+    r = runs[test] == 'run_0'
+    s = sessions[test] == 'session_T'
+    aux_run = np.logical_and(r, s)
+
+    r_test = runs[test] != 'run_0'
+    s_test = sessions[test] != 'session_T'
+    test_runs = np.logical_and(r_test, s_test)
+
+    return test_runs, aux_run
+
+
+def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
+    """
+
+    Create one model per subject and the with the others
+
+    :param run_dir:
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
+             model_list: list of clf
+
+    Parameters
+    ----------
+    nn_model
+
+    """
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    results = []
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+
+        subject = groups[test[0]]
+
+        # iterate over each pipeline
+        for name, clf in pipes.items():
+
+            # After, let's select one test run
+            # HARDCODED FOR NOW, BUT CHANGE LATER
+            test_runs, aux_run = select_run(runs, sessions, test)
+
+            len_run = sum(aux_run * 1)
+
+            Test = X[test[test_runs]]
+            y_t = y[test[test_runs]]
+
+            # Compute train data
+            train_idx = np.concatenate((train, test[aux_run]))
+            X_train = X[train_idx].get_data()
+            y_train = y[train_idx]
+
+            if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                Aux_trials = X[test[aux_run]]
+                _, r_op = euclidean_alignment(Aux_trials)
+                # Use ref matrix to align test data
+                X_t = np.matmul(r_op, Test.get_data())
+            else:
+                X_t = Test.get_data()
+
+            ftclf = create_clf_ft(nn_model, 100)
+            ftclf.initialize()
+
+            # Initialize with the saved parameters
+            ftclf.load_params(
+                f_params=str(run_dir / f"final_model_params_{subject}_exp1.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_exp1.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp1.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp1.pkl"), )
+
+            # Freeze some layers
+            ftclf.module_.conv_temporal.weight.requires_grad = False
+            ftclf.module_.bnorm_temporal.weight.requires_grad = False
+            ftclf.module_.conv_spatial.weight.requires_grad = False
+            ftclf.module_.bnorm_1.weight.requires_grad = False
+            ftclf.module_.conv_separable_depth.weight.requires_grad = False
+            ftclf.module_.conv_separable_point.weight.requires_grad = False
+            ftclf.module_.bnorm_2.weight.requires_grad = False
+
+            t_start = time()
+            ftmodel = ftclf.fit(X_train, y_train)
+            duration = time() - t_start
+
+            # Predict on the test set
+            score = _score(ftmodel, X_t, y_t, scorer)
+
+            nchan = (
+                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+            )
+
+            res = {
+                "time": duration,
+                "dataset": dataset,
+                "subject": subject,
+                "session": 'both',
+                "score": score,
+                "type": "Online",
+                "ft": "With",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "pipeline": name,
+            }
+            results.append(res)
+    return results
+
+
 def add_test_column(dataset, results):
     subj_list = dataset.subject_list
     list_ = []
