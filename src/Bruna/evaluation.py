@@ -194,26 +194,29 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
             )
             # for each test subject
+
             # Keep this division?
-            for session in np.unique(sessions[test]):
-                # First, the offline test
-                ix = sessions[test] == session
-                score = _score(model, X[test[ix]], y[test[ix]], scorer)
+            #for session in np.unique(sessions[test]):
+            #    # First, the offline test
+            #    ix = sessions[test] == session
+            session = "both"
+            score = _score(model, X[test], y[test], scorer)
 
-                res = {
-                    "time": duration,
-                    "dataset": dataset.code,
-                    "subject": subject,
-                    "session": session,
-                    "score": score,
-                    "type": "Offline",
-                    "ft": "Without",
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "subject": subject,
+                "session": session,
+                "score": score,
+                "type": "Offline",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "pipeline": name,
+                "exp": "Exp1"
+            }
 
-                results.append(res)
+            results.append(res)
 
             test_runs, aux_run = select_run(runs, sessions, test)
             len_run = sum(aux_run * 1)
@@ -242,6 +245,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
+                "exp": "Exp2"
             }
             results.append(res)
 
@@ -366,6 +370,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
+                "exp": "Exp3"
             }
             results.append(res)
     return results
