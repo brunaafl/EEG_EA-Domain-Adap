@@ -1,9 +1,7 @@
-# Use the nvcr.io/nvidia/pytorch:22.11-py3 base image
-FROM baristimunha/moabb
-
+FROM nvcr.io/nvidia/pytorch:23.05-py3
 
 COPY requirements.txt .
-# Install the Python packages listed in the 'meta_requirements.txt' file
+RUN echo "teste"
 RUN pip3 install -r requirements.txt
 
 
