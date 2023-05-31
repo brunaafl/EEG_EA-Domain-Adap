@@ -5,6 +5,7 @@ Baseline script to analyse the EEG Dataset.
 
 import torch
 import numpy as np
+import pandas as pd
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.evaluations import CrossSubjectEvaluation
@@ -17,6 +18,7 @@ from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
+from evaluation import shared_model, online_shared
 from util import parse_args, set_determinism, set_run_dir
 
 """
@@ -94,18 +96,14 @@ def main(args):
         pipes["EEGNetv4_Without_EA"] = pipe
 
     # Define evaluation and train
-    overwrite = False  # set to True if we want to overwrite cached results
-    evaluation = CrossSubjectEvaluation(
-        paradigm=paradigm,
-        datasets=datasets,
-        suffix=f"experiment_1_{args.dataset}",
-        overwrite=overwrite,
-        return_epochs=True,
-        hdf5_path=run_dir,
-        n_jobs=-1,
-    )
+    # First, offline, zero-shot and online with 1 run for EA
+    results_ = shared_model(dataset, paradigm, pipes, run_dir)
 
-    results = evaluation.process(pipes)
+    # Now, Online with 1 run for EA and ft
+    results_ft = online_shared(dataset, paradigm, pipes, model, run_dir)
+
+    results = pd.concat([results_, results_ft])
+
     print(results.head())
 
     # Save results

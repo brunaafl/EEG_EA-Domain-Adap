@@ -213,7 +213,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
-                "exp": "Exp1"
+                "exp": "shared"
             }
 
             results.append(res)
@@ -225,13 +225,21 @@ def shared_model(dataset, paradigm, pipes, run_dir):
             y_t = y[test[test_runs]]
 
             if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+
+                # First, zero shot
+                score_zeroshot = _score(model["Net"], Test.get_data(), y_t, scorer)
+
+                # Then, test with one run for ft
                 Aux_trials = X[test[aux_run]]
                 _, r_op = euclidean_alignment(Aux_trials.get_data())
                 # Use ref matrix to align test data
                 X_t = np.matmul(r_op, Test.get_data())
-
                 # Compute score
-                score = _score(model["Net"], X_t, y_t, scorer)
+                score_EA = _score(model["Net"], X_t, y_t, scorer)
+
+            else:
+                score_zeroshot = score
+                score_EA = score
 
             # If without alignment, scores don't change
             res = {
@@ -239,13 +247,28 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 "dataset": dataset.code,
                 "subject": subject,
                 "session": session,
-                "score": score,
+                "score": score_zeroshot,
                 "type": "Online",
                 "ft": "Without",
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
-                "exp": "Exp2"
+                "exp": "zero_shot"
+            }
+            results.append(res)
+
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "subject": subject,
+                "session": session,
+                "score": score_EA,
+                "type": "Online",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "pipeline": name,
+                "exp": "1run"
             }
             results.append(res)
 
@@ -370,7 +393,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
-                "exp": "Exp3"
+                "exp": "fine-tuning"
             }
             results.append(res)
     return results
@@ -520,15 +543,17 @@ def eval_exp4(dataset, paradigm, pipes, run_dir):
                 f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp4.pkl"),
             )
 
+            nchan = (
+                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+            )
+
             # for each test subject
             for subj in np.unique(groups[test]):
                 # Now evaluate
                 ix = groups[test] == subj
                 score = _score(model, X[test[ix]], y[test[ix]], scorer)
                 session = 'both'
-                nchan = (
-                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                )
+
                 res = {
                     "time": duration,
                     "dataset": dataset.code,
@@ -539,9 +564,13 @@ def eval_exp4(dataset, paradigm, pipes, run_dir):
                     "n_samples": len(train),
                     "n_channels": nchan,
                     "pipeline": name,
+                    "exp": "individual"
                 }
 
                 results.append(res)
+
+            # For the train subject as well?
+            #score = _score(model, X[train], y[train], scorer)
 
     results = pd.DataFrame(results)
 
