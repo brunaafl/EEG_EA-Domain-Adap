@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
-from moabb.evaluations import CrossSubjectEvaluation
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -20,6 +19,7 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 from train import define_clf, init_model
 from evaluation import shared_model, online_shared
 from util import parse_args, set_determinism, set_run_dir
+from paradigm import MotorImagery_, LeftRightImagery_
 
 """
 For the joint model
@@ -44,7 +44,7 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery(events=events, n_classes=len(events))
+    paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy')
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -56,9 +56,8 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery(resample=100.0)
+        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
-    datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
