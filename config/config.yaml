@@ -13,4 +13,4 @@ model:
     drop_prob: 0.3
     final_conv_length: 'auto'
 dataset:
-    path: '/home/bruno/projects/moabb/dataset/'
+    path: '/mnt/beegfs/home/aristimunha/projects/moabb/dataset/'
