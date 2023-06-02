@@ -1,7 +1,7 @@
 seed: 42
 train:
     num_workers: 10
-    run_report: '/project/outputs'
+    run_report: '/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/''
     n_epochs: 300
     patience: 50
     weight_decay: 0
@@ -13,4 +13,4 @@ model:
     drop_prob: 0.5
     final_conv_length: 'auto'
 dataset:
-    path: "/project/dataset/"
+    path: "/home/bruno/projects/moabb/dataset/"
