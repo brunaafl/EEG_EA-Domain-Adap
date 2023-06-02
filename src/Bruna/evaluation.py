@@ -171,7 +171,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
 
     results = []
     # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-SharedModels"):
 
         subject = groups[test[0]]
 
@@ -323,7 +323,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
 
     results = []
     # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-SharedModels"):
 
         subject = groups[test[0]]
 
@@ -346,7 +346,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
 
             if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
                 Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials)
+                _, r_op = euclidean_alignment(Aux_trials.get_data())
                 # Use ref matrix to align test data
                 X_t = np.matmul(r_op, Test.get_data())
             else:
