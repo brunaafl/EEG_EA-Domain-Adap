@@ -1,7 +1,7 @@
 seed: 42
 train:
     num_workers: 10
-    run_report: '/home/bruno/projects/EEG_EA-Domain-Adap/output/'
+    run_report: '/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 300
     patience: 50
     weight_decay: 0
@@ -10,7 +10,7 @@ train:
     seed: 42
 train:
     num_workers: 10
-    run_report: '/home/bruno/projects/EEG_EA-Domain-Adap/output/'
+    run_report: '/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 300
     patience: 50
     weight_decay: 0
