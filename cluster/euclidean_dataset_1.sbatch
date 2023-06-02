@@ -8,11 +8,11 @@
 #SBATCH --mail-user=a.bruno@ufabc.edu.br 
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=ALL
-#SBATCH --output=/mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/logs/eeg_euclidean_exp_1_dataset_1_%j.log		
+#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/eeg_euclidean_exp_1_dataset_1_%j.log
 
-module load /mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/cluster/python
+module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
-python /mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp1.py --config_file=/mnt/beegfs/home/chevallier/bruno/EEG_EA-Domain-Adap/config/config.yaml  --num_exp 'exp_1' --dataset 'BNCI2014001'
+python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp1.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config.yaml  --num_exp 'exp_1' --dataset 'BNCI2014001'
 
 
  
