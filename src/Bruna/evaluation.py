@@ -195,82 +195,88 @@ def shared_model(dataset, paradigm, pipes, run_dir):
             )
             # for each test subject
 
-            # Keep this division?
-            #for session in np.unique(sessions[test]):
-            #    # First, the offline test
-            #    ix = sessions[test] == session
-            session = "both"
-            score = _score(model, X[test], y[test], scorer)
-
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "subject": subject,
-                "session": session,
-                "score": score,
-                "type": "Offline",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "pipeline": name,
-                "exp": "shared"
-            }
-
-            results.append(res)
-
+            # Select runs used for the EA test
+            # test_runs we are going to use for test
+            # aux_run we are going to use for the EA
             test_runs, aux_run = select_run(runs, sessions, test)
             len_run = sum(aux_run * 1)
 
-            Test = X[test[test_runs]]
-            y_t = y[test[test_runs]]
+            # Keep this division?
+            for session in np.unique(sessions[test]):
+                # First, the offline test
+                ix = sessions[test] == session
+                score = _score(model, X[test[ix]], y[test[ix]], scorer)
 
-            if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": subject,
+                    "session": session,
+                    "score": score,
+                    "type": "Offline",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                    "exp": "shared"
+                }
 
-                # First, zero shot
-                score_zeroshot = _score(model["Net"], Test.get_data(), y_t, scorer)
+                results.append(res)
 
-                # Then, test with one run for ft
-                Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials.get_data())
-                # Use ref matrix to align test data
-                X_t = np.matmul(r_op, Test.get_data())
-                # Compute score
-                score_EA = _score(model["Net"], X_t, y_t, scorer)
+                # Test part using just trials from session
+                test_idx = np.logical_and(test_runs, ix)
+                Test = X[test[test_idx]]
+                y_t = y[test[test_idx]]
 
-            else:
-                score_zeroshot = score
-                score_EA = score
+                # If we are analyzing with EA
+                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
 
-            # If without alignment, scores don't change
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "subject": subject,
-                "session": session,
-                "score": score_zeroshot,
-                "type": "Online",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "pipeline": name,
-                "exp": "zero_shot"
-            }
-            results.append(res)
+                    # First, zero shot
+                    score_zeroshot = _score(model["Net"], Test.get_data(), y_t, scorer)
 
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "subject": subject,
-                "session": session,
-                "score": score_EA,
-                "type": "Online",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "pipeline": name,
-                "exp": "1run"
-            }
-            results.append(res)
+                    # Then, test with one run for ft
+                    Aux_trials = X[test[aux_run]]
+                    _, r_op = euclidean_alignment(Aux_trials.get_data())
+                    # Use ref matrix to align test data
+                    X_t = np.matmul(r_op, Test.get_data())
+                    # Compute score
+                    score_EA = _score(model["Net"], X_t, y_t, scorer)
+
+                # Else, no changesfor zeroshot or ea
+                else:
+                    score_zeroshot = score
+                    score_EA = score
+
+                # If without alignment, scores don't change
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": subject,
+                    "session": session,
+                    "score": score_zeroshot,
+                    "type": "Online",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                    "exp": "zero_shot"
+                }
+                results.append(res)
+
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": subject,
+                    "session": session,
+                    "score": score_EA,
+                    "type": "Online",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                    "exp": "1run"
+                }
+                results.append(res)
 
     results = pd.DataFrame(results)
     return results
