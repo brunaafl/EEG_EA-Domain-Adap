@@ -97,7 +97,6 @@ def main(args):
     # Define evaluation and train
     # First, offline, zero-shot and online with 1 run for EA
     results_ = shared_model(dataset, paradigm, pipes, run_dir)
-
     # Now, Online with 1 run for EA and ft
     results_ft = online_shared(dataset, paradigm, pipes, model, run_dir)
 

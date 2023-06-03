@@ -273,7 +273,6 @@ def shared_model(dataset, paradigm, pipes, run_dir):
             results.append(res)
 
     results = pd.DataFrame(results)
-
     return results
 
 
@@ -396,6 +395,8 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
                 "exp": "fine-tuning"
             }
             results.append(res)
+
+    results = pd.DataFrame(results)
     return results
 
 
