@@ -223,7 +223,8 @@ def shared_model(dataset, paradigm, pipes, run_dir):
 
                 results.append(res)
 
-                # Test part using just trials from session
+                # Test part using just trials from this session
+                # And without the aux EA trials
                 test_idx = np.logical_and(test_runs, ix)
                 Test = X[test[test_idx]]
                 y_t = y[test[test_idx]]
@@ -287,12 +288,10 @@ def select_run(runs, sessions, test):
     s = sessions[test] == 'session_T'
     aux_run = np.logical_and(r, s)
 
-    r_test = runs[test] != 'run_0'
-    s_test = sessions[test] != 'session_T'
-    test_runs = np.logical_and(r_test, s_test)
+    # Select the opposit for the test
+    test_runs = np.invert(aux_run)
 
     return test_runs, aux_run
-
 
 def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
     """
@@ -338,24 +337,12 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
             # After, let's select one test run
             # HARDCODED FOR NOW, BUT CHANGE LATER
             test_runs, aux_run = select_run(runs, sessions, test)
-
             len_run = sum(aux_run * 1)
-
-            Test = X[test[test_runs]]
-            y_t = y[test[test_runs]]
 
             # Compute train data
             train_idx = np.concatenate((train, test[aux_run]))
             X_train = X[train_idx].get_data()
             y_train = y[train_idx]
-
-            if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
-                Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials.get_data())
-                # Use ref matrix to align test data
-                X_t = np.matmul(r_op, Test.get_data())
-            else:
-                X_t = Test.get_data()
 
             ftclf = create_clf_ft(nn_model, 100)
             ftclf.initialize()
@@ -380,27 +367,44 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
             ftmodel = ftclf.fit(X_train, y_train)
             duration = time() - t_start
 
-            # Predict on the test set
-            score = _score(ftmodel, X_t, y_t, scorer)
+            # Now test
+            for session in np.unique(sessions[test]):
+                # First, the offline test
+                ix = sessions[test] == session
+                test_idx = np.logical_and(test_runs, ix)
+                Test = X[test[test_idx]]
+                y_t = y[test[test_idx]]
 
-            nchan = (
-                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-            )
+                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                    Aux_trials = X[test[aux_run]]
+                    _, r_op = euclidean_alignment(Aux_trials.get_data())
+                    # Use ref matrix to align test data
+                    X_t = np.matmul(r_op, Test.get_data())
+                else:
+                    X_t = Test.get_data()
 
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "subject": subject,
-                "session": 'both',
-                "score": score,
-                "type": "Online",
-                "ft": "With",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "pipeline": name,
-                "exp": "fine-tuning"
-            }
-            results.append(res)
+
+                # Predict on the test set
+                score = _score(ftmodel, X_t, y_t, scorer)
+
+                nchan = (
+                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                )
+
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": subject,
+                    "session": session,
+                    "score": score,
+                    "type": "Online",
+                    "ft": "With",
+                    "n_samples": len(y_train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                    "exp": "fine-tuning"
+                }
+                results.append(res)
 
     results = pd.DataFrame(results)
     return results
