@@ -362,10 +362,6 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
             ftclf.module_.conv_separable_point.weight.requires_grad = False
             ftclf.module_.bnorm_2.weight.requires_grad = False
 
-            t_start = time()
-            ftmodel = ftclf.fit(X_train, y_train)
-            duration = time() - t_start
-
             # Now test
             for session in np.unique(sessions[test]):
                 # First, the offline test
@@ -375,11 +371,22 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
                 y_t = y[test[test_idx]]
 
                 if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+
+                    X_train = split_runs_EA(X_train, len_run)
+                    t_start = time()
+                    ftmodel = ftclf.fit(X_train, y_train)
+                    duration = time() - t_start
+
                     Aux_trials = X[test[aux_run]]
                     _, r_op = euclidean_alignment(Aux_trials.get_data())
                     # Use ref matrix to align test data
                     X_t = np.matmul(r_op, Test.get_data())
                 else:
+
+                    t_start = time()
+                    ftmodel = ftclf.fit(X_train, y_train)
+                    duration = time() - t_start
+
                     X_t = Test.get_data()
 
 
