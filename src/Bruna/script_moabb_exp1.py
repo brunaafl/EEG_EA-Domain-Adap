@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
-from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
