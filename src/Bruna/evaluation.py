@@ -353,7 +353,6 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
                 f_history=str(run_dir / f"final_model_history_{subject}_exp1.json"),
                 f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp1.pkl"),
                 f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp1.pkl"), )
-
             # Freeze some layers
             ftclf.module_.conv_temporal.weight.requires_grad = False
             ftclf.module_.bnorm_temporal.weight.requires_grad = False
@@ -788,8 +787,8 @@ def create_clf_ft(model, max_epochs):
         batch_size=64,
         max_epochs=max_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
-                   EpochScoring(scoring='roc_auc', on_train=True, name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='roc_auc', on_train=False, name='valid_acc',
+                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc',
                                 lower_is_better=False)],
         device=device,
         verbose=1,

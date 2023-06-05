@@ -48,7 +48,6 @@ def main(args):
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
-        dataset.subject_list = dataset.subject_list[:3]
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
