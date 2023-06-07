@@ -203,15 +203,14 @@ def shared_model(dataset, paradigm, pipes, run_dir):
 
             # Keep this division?
             for session in np.unique(sessions[test]):
+                # We exclude aux EA trials so the results are comparable
+                ix = sessions[test] == session
                 # First, the offline test
                 # Test part using just trials from this session
                 # And without the aux EA trials
                 test_idx = np.logical_and(test_runs, ix)
                 Test = X[test[test_idx]]
                 y_t = y[test[test_idx]]
-
-                # We exclude aux EA trialsso the results are comparable
-                ix = sessions[test] == session
                 score = _score(model, Test, y_t, scorer)
 
                 res = {
