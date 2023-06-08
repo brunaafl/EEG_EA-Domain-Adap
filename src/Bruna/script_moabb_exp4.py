@@ -5,20 +5,21 @@ Baseline script to analyse the EEG Dataset.
 
 import torch
 import numpy as np
+import pandas as pd
 
 from omegaconf import OmegaConf
 
 from sklearn.pipeline import Pipeline
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
-from moabb.paradigms import MotorImagery, LeftRightImagery
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from evaluation import eval_exp4
+from evaluation import individual_models, online_indiv
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
+from paradigm import MotorImagery_, LeftRightImagery_
 
 """
 For the joint model
@@ -43,7 +44,7 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery(events=events, n_classes=len(events))
+    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy')
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -55,7 +56,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery(resample=100.0)
+        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
@@ -96,7 +97,12 @@ def main(args):
         pipes["EEGNetv4_Without_EA"] = pipe
 
     # Evaluation for this experiment
-    results, model_list = eval_exp4(dataset, paradigm, pipes)
+    results_, model_list = individual_models(dataset, paradigm, pipes, run_dir)
+
+    # Now, Online with 1 run for EA and ft
+    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir)
+
+    results = pd.concat([results_, results_ft])
 
     # results = evaluation.process(pipes)
     print(results.head())

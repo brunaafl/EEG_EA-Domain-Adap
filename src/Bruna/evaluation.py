@@ -193,19 +193,18 @@ def shared_model(dataset, paradigm, pipes, run_dir):
             nchan = (
                 X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
             )
-            # for each test subject
 
-            # Select runs used for the EA test
-            # test_runs we are going to use for test
-            # aux_run we are going to use for the EA
-            test_runs, aux_run = select_run(runs, sessions, test)
-            len_run = sum(aux_run * 1)
-
-            # Keep this division?
             for session in np.unique(sessions[test]):
+
+                # Select runs used for the EA test
+                # test_runs we are going to use for test
+                # aux_run we are going to use for the EA
+                test_runs, aux_run = select_run(runs, sessions, test, session)
+                len_run = sum(aux_run * 1)
+
                 # We exclude aux EA trials so the results are comparable
                 ix = sessions[test] == session
-                # First, the offline test
+
                 # Test part using just trials from this session
                 # And without the aux EA trials
                 test_idx = np.logical_and(test_runs, ix)
@@ -283,9 +282,25 @@ def shared_model(dataset, paradigm, pipes, run_dir):
     return results
 
 
-def select_run(runs, sessions, test):
-    r = runs[test] == 'run_0'
-    s = sessions[test] == 'session_T'
+def select_run(runs, sessions, test, session='session_T'):
+    """
+    Select the run that is going to be used as auxiliar
+
+    :param runs: array indicating eaach trial's run
+    :param sessions: array indicating eaach trial's session
+    :param test: array with the index of test trials
+    :param session: string (name of session)
+
+    :return:
+        :param test_runs: boolean array with True in the index of test trials (and False elsewhere)
+        :param aux_run : boolean array with True in the index of aux trials (and False elsewhere)
+    """
+
+    runs_ = np.unique(runs[test])
+
+    # Select the first run from given session
+    r = runs[test] == runs_[0]
+    s = sessions[test] == session
     aux_run = np.logical_and(r, s)
 
     # Select the opposit for the test
@@ -340,16 +355,6 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
-            # After, let's select one test run
-            # HARDCODED FOR NOW, BUT CHANGE LATER
-            test_runs, aux_run = select_run(runs, sessions, test)
-            len_run = sum(aux_run * 1)
-
-            # Compute train data
-            train_idx = np.concatenate((train, test[aux_run]))
-            X_train = X[train_idx].get_data()
-            y_train = y[train_idx]
-
             ftclf = create_clf_ft(nn_model, 100)
             ftclf.initialize()
 
@@ -370,7 +375,15 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
 
             # Now test
             for session in np.unique(sessions[test]):
-                # First, the offline test
+
+                test_runs, aux_run = select_run(runs, sessions, test, session)
+                len_run = sum(aux_run * 1)
+
+                # Compute train data
+                train_idx = np.concatenate((train, test[aux_run]))
+                X_train = X[train_idx].get_data()
+                y_train = y[train_idx]
+
                 ix = sessions[test] == session
                 test_idx = np.logical_and(test_runs, ix)
                 Test = X[test[test_idx]]
@@ -649,7 +662,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
             X_train = X[train_idx].get_data()
             y_train = y[train_idx]
 
-            ftclf = create_clf_ft(nn_model, 100)
+            ftclf = create_clf_ft(nn_model, 100, optimizer__lr=0.0125 * 0.01, optimizer__weight_decay=0, batch_size=64)
             ftclf.initialize()
 
             # Initialize with the saved parameters
@@ -878,9 +891,6 @@ def eval_exp4(dataset, paradigm, pipes, run_dir):
 
                 results.append(res)
 
-            # For the train subject as well?
-            # score = _score(model, X[train], y[train], scorer)
-
     results = pd.DataFrame(results)
 
     return results, model_list
@@ -1068,7 +1078,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
     return results
 
 
-def create_clf_ft(model, max_epochs):
+def create_clf_ft(model, max_epochs, optimizer__lr=0.0125 * 0.01, optimizer__weight_decay=0, batch_size=64):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
@@ -1081,9 +1091,9 @@ def create_clf_ft(model, max_epochs):
         criterion=torch.nn.NLLLoss,
         optimizer=torch.optim.AdamW,
         train_split=ValidSplit(0.20, random_state=42),  # using valid_set for validation
-        optimizer__lr=0.0125 * 0.01,
-        optimizer__weight_decay=0,
-        batch_size=64,
+        optimizer__lr=optimizer__lr,
+        optimizer__weight_decay=optimizer__weight_decay,
+        batch_size=batch_size,
         max_epochs=max_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
                    EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
