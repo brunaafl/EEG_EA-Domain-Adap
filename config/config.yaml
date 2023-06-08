@@ -13,4 +13,4 @@ model:
     drop_prob: 0.3
     final_conv_length: 'auto'
 dataset:
-    path: '/mnt/beegfs/home/aristimunha/moabb/mne_data'
+    path: '/mnt/beegfs/projects/moabb/mne_data'
