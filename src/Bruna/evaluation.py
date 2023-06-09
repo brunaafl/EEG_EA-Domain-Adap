@@ -464,10 +464,11 @@ def individual_models(dataset, paradigm, pipes, run_dir):
 
     results = []
     model_list = []
-    # for each test subject
+
+    # for each train subject
     for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
 
-        subject = groups[test[0]]
+        subject = groups[train[0]]
 
         # iterate over each pipeline
         for name, clf in pipes.items():
@@ -486,8 +487,8 @@ def individual_models(dataset, paradigm, pipes, run_dir):
             res = {
                 "time": duration,
                 "dataset": dataset.code,
-                "subject": groups[train[0]],
-                "test": groups[train[0]],
+                "subject": subject,
+                "test": subject,
                 "session": session,
                 "score": score,
                 "type": "Offline",
@@ -598,9 +599,9 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                     }
                     results.append(res)
 
-        results = pd.DataFrame(results)
+    results = pd.DataFrame(results)
 
-        return results, model_list
+    return results, model_list
 
 
 def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
@@ -642,7 +643,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
 
     results = []
     # for each test subject
-    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-SharedModels"):
+    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
 
         subject = groups[train[0]]
 
