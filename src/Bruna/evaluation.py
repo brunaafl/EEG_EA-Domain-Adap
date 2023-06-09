@@ -494,7 +494,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                 "n_samples": len(train),
                 "n_channels": nchan,
                 "pipeline": name,
-                "exp": "individual"
+                "exp": "indiv"
             }
 
             results.append(res)
@@ -506,30 +506,26 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                 f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv.pkl"),
             )
 
-            # Select runs used for the EA test
-            # test_runs we are going to use for test
-            # aux_run we are going to use for the EA
-            test_runs, aux_run = select_run(runs, sessions, test)
-            len_run = sum(aux_run * 1)
-
-            # Keep this division?
+            # Test subject
             for subj in np.unique(groups[test]):
                 for session in np.unique(sessions[test]):
-                    # First, the offline test
-                    # Test part using just trials from this session
-                    # And without the aux EA trials
 
-                    # Take data from test subject subj
-                    test_ix = groups[test] == subj
+                    # Select runs used for the EA test
+                    # test_runs we are going to use for test
+                    # aux_run we are going to use for the EA
+                    test_runs, aux_run = select_run(runs, sessions, test, session)
+                    len_run = sum(aux_run * 1)
+
+                    # Take data from test subject subj and session
+                    test_subj = groups[test] == subj
+                    ix = sessions[test] == session
                     # Select just the required part
-                    test_idx = np.logical_and(test_runs, test_ix)
+                    test_idx = np.logical_and(test_runs, test_subj)
                     #  Select required session
                     test_idx = np.logical_and(test_idx, ix)
                     Test = X[test[test_idx]]
                     y_t = y[test[test_idx]]
 
-                    # We exclude aux EA trials so the results are comparable
-                    ix = sessions[test] == session
                     score = _score(model, Test, y_t, scorer)
 
                     res = {
@@ -544,7 +540,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         "n_samples": len(train),
                         "n_channels": nchan,
                         "pipeline": name,
-                        "exp": "individual"
+                        "exp": "indiv"
                     }
 
                     results.append(res)
@@ -581,7 +577,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         "n_samples": len(train),
                         "n_channels": nchan,
                         "pipeline": name,
-                        "exp": "zero_shot"
+                        "exp": "indiv_zero_shot"
                     }
                     results.append(res)
 
@@ -597,7 +593,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         "n_samples": len(train),
                         "n_channels": nchan,
                         "pipeline": name,
-                        "exp": "1run"
+                        "exp": "indiv_1run"
                     }
                     results.append(res)
 
@@ -652,16 +648,6 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
-            # After, let's select one test run
-            # HARDCODED FOR NOW, BUT CHANGE LATER
-            test_runs, aux_run = select_run(runs, sessions, test)
-            len_run = sum(aux_run * 1)
-
-            # Compute train data
-            train_idx = np.concatenate((train, test[aux_run]))
-            X_train = X[train_idx].get_data()
-            y_train = y[train_idx]
-
             ftclf = create_clf_ft(nn_model, 100, optimizer__lr=0.0125 * 0.01, optimizer__weight_decay=0, batch_size=64)
             ftclf.initialize()
 
@@ -682,50 +668,73 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
             ftclf.module_.bnorm_2.weight.requires_grad = False
 
             # Now test
-            for session in np.unique(sessions[test]):
-                # First, the offline test
-                ix = sessions[test] == session
-                test_idx = np.logical_and(test_runs, ix)
-                Test = X[test[test_idx]]
-                y_t = y[test[test_idx]]
+            # Keep this division?
+            for subj in np.unique(groups[test]):
+                for session in np.unique(sessions[test]):
 
-                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                    # Take data from test subject subj and session
+                    test_subj = groups[test] == subj
+                    ix = sessions[test] == session
 
-                    X_train = split_runs_EA(X_train, len_run)
-                    t_start = time()
-                    ftmodel = ftclf.fit(X_train, y_train)
-                    duration = time() - t_start
+                    # Select runs used for the EA test
+                    # test_runs we are going to use for test
+                    # aux_run we are going to use for the EA
+                    test_runs, aux_run = select_run(runs, sessions, test, session)
+                    len_run = sum(aux_run * 1)
 
-                    Aux_trials = X[test[aux_run]]
-                    _, r_op = euclidean_alignment(Aux_trials.get_data())
-                    # Use ref matrix to align test data
-                    X_t = np.matmul(r_op, Test.get_data())
-                else:
+                    # Select just the required part
+                    aux_idx = np.logical_and(aux_run, test_subj)
 
-                    t_start = time()
-                    ftmodel = ftclf.fit(X_train, y_train)
-                    duration = time() - t_start
+                    # Compute train data
+                    train_idx = np.concatenate((train, test[aux_idx]))
+                    X_train = X[train_idx].get_data()
+                    y_train = y[train_idx]
 
-                    X_t = Test.get_data()
+                    # Select just the required part
+                    test_idx = np.logical_and(test_runs, test_subj)
+                    #  Select required session
+                    test_idx = np.logical_and(test_idx, ix)
+                    Test = X[test[test_idx]]
+                    y_t = y[test[test_idx]]
 
-                # Predict on the test set
-                score = _score(ftmodel, X_t, y_t, scorer)
+                    if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
 
-                res = {
-                    "time": duration,
-                    "dataset": dataset.code,
-                    "subject": subject,
-                    "session": session,
-                    "score": score,
-                    "type": "Online",
-                    "ft": "With",
-                    "n_samples": len(y_train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                    "exp": "fine-tuning"
-                }
+                        X_train = split_runs_EA(X_train, len_run)
+                        t_start = time()
+                        ftmodel = ftclf.fit(X_train, y_train)
+                        duration = time() - t_start
 
-                results.append(res)
+                        Aux_trials = X[test[aux_idx]]
+                        _, r_op = euclidean_alignment(Aux_trials.get_data())
+                        # Use ref matrix to align test data
+                        X_t = np.matmul(r_op, Test.get_data())
+                    else:
+
+                        t_start = time()
+                        ftmodel = ftclf.fit(X_train, y_train)
+                        duration = time() - t_start
+
+                        X_t = Test.get_data()
+
+                    # Predict on the test set
+                    score = _score(ftmodel, X_t, y_t, scorer)
+
+                    res = {
+                        "time": duration,
+                        "dataset": dataset.code,
+                        "subject": subject,
+                        "test": subj,
+                        "session": session,
+                        "score": score,
+                        "type": "Online",
+                        "ft": "With",
+                        "n_samples": len(train),
+                        "n_channels": nchan,
+                        "pipeline": name,
+                        "exp": "indiv_ft"
+                    }
+
+                    results.append(res)
 
     results = pd.DataFrame(results)
     return results
