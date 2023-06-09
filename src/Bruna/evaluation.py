@@ -512,15 +512,19 @@ def individual_models(dataset, paradigm, pipes, run_dir):
             for subj in np.unique(groups[test]):
                 for session in np.unique(sessions[test]):
 
+                    # Take data from test subject subj and session
+                    test_subj = groups[test] == subj
+                    ix = sessions[test] == session
+
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
                     test_runs, aux_run = select_run(runs, sessions, test, session)
-                    len_run = sum(aux_run * 1)
 
-                    # Take data from test subject subj and session
-                    test_subj = groups[test] == subj
-                    ix = sessions[test] == session
+                    # Select just the required part
+                    aux_idx = np.logical_and(aux_run, test_subj)
+                    len_run = sum(aux_idx * 1)
+
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
                     #  Select required session
@@ -554,7 +558,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         score_zeroshot = _score(model["Net"], Test.get_data(), y_t, scorer)
 
                         # Then, test with one run for ft
-                        Aux_trials = X[test[aux_run]]
+                        Aux_trials = X[test[aux_idx]]
                         _, r_op = euclidean_alignment(Aux_trials.get_data())
                         # Use ref matrix to align test data
                         X_t = np.matmul(r_op, Test.get_data())
@@ -598,7 +602,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         "exp": "indiv_1run"
                     }
                     results.append(res)
-                break
+
     results = pd.DataFrame(results)
 
     return results, model_list
@@ -682,17 +686,14 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
                     test_runs, aux_run = select_run(runs, sessions, test, session)
-                    len_run = sum(aux_run * 1)
-
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
+                    len_run = sum(aux_idx * 1)
 
                     # Compute train data
                     train_idx = np.concatenate((train, test[aux_idx]))
                     X_train = X[train_idx].get_data()
-                    print(X_train.shape)
                     y_train = y[train_idx]
-                    print(len(y_train))
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
@@ -1091,7 +1092,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
     return results
 
 
-def create_clf_ft(model, max_epochs, optimizer__lr=0.0125 * 0.01, optimizer__weight_decay=0, batch_size=64):
+def create_clf_ft(model, max_epochs, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=0, batch_size=64):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
