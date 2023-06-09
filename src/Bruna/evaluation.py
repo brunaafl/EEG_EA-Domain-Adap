@@ -598,7 +598,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                         "exp": "indiv_1run"
                     }
                     results.append(res)
-
+                break
     results = pd.DataFrame(results)
 
     return results, model_list
@@ -690,7 +690,9 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
                     # Compute train data
                     train_idx = np.concatenate((train, test[aux_idx]))
                     X_train = X[train_idx].get_data()
+                    print(X_train.shape)
                     y_train = y[train_idx]
+                    print(len(y_train))
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
@@ -701,9 +703,9 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
 
                     if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
 
-                        X_train = split_runs_EA(X_train, len_run)
+                        X_train_ = split_runs_EA(X_train, len_run)
                         t_start = time()
-                        ftmodel = ftclf.fit(X_train, y_train)
+                        ftmodel = ftclf.fit(X_train_, y_train)
                         duration = time() - t_start
 
                         Aux_trials = X[test[aux_idx]]
