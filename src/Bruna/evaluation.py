@@ -1071,7 +1071,7 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
     return results
 
 
-def create_clf_ft(model, max_epochs, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=0, batch_size=64):
+def create_clf_ft(model, max_epochs, optimizer__lr=0.06 * 0.01, optimizer__weight_decay=1e-6, batch_size=64):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it

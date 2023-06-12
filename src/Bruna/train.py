@@ -84,6 +84,8 @@ def define_clf(model, config):
         device=device,
         verbose=1,
     )
+
+    clf.initialize()
     return clf
 
 
