@@ -633,7 +633,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
-            ftclf = create_clf_ft(nn_model, 100, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=1e-4, batch_size=16)
+            ftclf = create_clf_ft(nn_model, 100, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=1e-4, batch_size=64)
             ftclf.initialize()
 
             # Initialize with the saved parameters
@@ -722,6 +722,36 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
 
     results = pd.DataFrame(results)
     return results
+
+
+def create_clf_ft(model, max_epochs, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=0, batch_size=64):
+    cuda = (
+        torch.cuda.is_available()
+    )  # check if GPU is available, if True chooses to use it
+    device = "cuda" if cuda else "cpu"
+    if cuda:
+        torch.backends.cudnn.benchmark = True
+
+    ftclf = EEGClassifier(
+        deepcopy(model),
+        criterion=torch.nn.NLLLoss,
+        optimizer=torch.optim.AdamW,
+        train_split=ValidSplit(0.20, random_state=42),  # using valid_set for validation
+        optimizer__lr=optimizer__lr,
+        optimizer__weight_decay=optimizer__weight_decay,
+        batch_size=batch_size,
+        max_epochs=max_epochs,
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
+                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc',
+                                lower_is_better=False)],
+        device=device,
+        verbose=1,
+    )
+
+    ftclf.initialize()
+
+    return ftclf
 
 
 def ensemble_simple(dataset, paradigm, model_list):
@@ -1069,36 +1099,6 @@ def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', onlin
 
     results = pd.DataFrame(results)
     return results
-
-
-def create_clf_ft(model, max_epochs, optimizer__lr=0.06 * 0.01, optimizer__weight_decay=1e-6, batch_size=64):
-    cuda = (
-        torch.cuda.is_available()
-    )  # check if GPU is available, if True chooses to use it
-    device = "cuda" if cuda else "cpu"
-    if cuda:
-        torch.backends.cudnn.benchmark = True
-
-    ftclf = EEGClassifier(
-        deepcopy(model),
-        criterion=torch.nn.NLLLoss,
-        optimizer=torch.optim.AdamW,
-        train_split=ValidSplit(0.20, random_state=42),  # using valid_set for validation
-        optimizer__lr=optimizer__lr,
-        optimizer__weight_decay=optimizer__weight_decay,
-        batch_size=batch_size,
-        max_epochs=max_epochs,
-        callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
-                   EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False, name='valid_acc',
-                                lower_is_better=False)],
-        device=device,
-        verbose=1,
-    )
-
-    ftclf.initialize()
-
-    return ftclf
 
 
 def add_test_column(dataset, results):
