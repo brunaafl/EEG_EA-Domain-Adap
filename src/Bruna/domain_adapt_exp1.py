@@ -109,7 +109,6 @@ def main(args):
     pipe = Pipeline([("Hybrid_adapter", hybrid_adapter),
                      ("Net", clone(clf))])
 
-
     if args.ea == 'alignment':
         pipes["EEGNetv4_EA"] = pipe_with_align
     else:
@@ -126,6 +125,8 @@ def main(args):
         hdf5_path=run_dir,
         n_jobs=-1,
         eval_config=eval_config,
+        EA_in_eval=(args.ea == 'alignment'),
+        len_run=len_run,
     )
 
     with torch.autograd.set_detect_anomaly(True):

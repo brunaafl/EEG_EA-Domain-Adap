@@ -39,11 +39,11 @@ import mne
 
 import pdb
 
-from torchviz import make_dot
+#from torchviz import make_dot
 
 from train import define_clf
 
-from pipeline import TransformaParaWindowsDataset
+from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 
 from dataset import split_runs_EA
 
@@ -131,7 +131,7 @@ class HybridClassifier(EEGClassifier):
 
 		loss = sum(losses) / self.module.num_models
 
-		make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
+		#make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
 
 		return loss
 
@@ -289,9 +289,11 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
 
 class HybridEvaluation(BaseEvaluation):
-	def __init__(self, *args, eval_config=None, **kwargs):
+	def __init__(self, *args, eval_config=None, EA_in_eval=False, len_run=None, **kwargs):
 		super(HybridEvaluation, self).__init__(*args, **kwargs)
 		self.eval_config = eval_config
+		self.EA_in_eval = EA_in_eval
+		self.len_run = len_run
 	def is_valid(self, dataset):
 		return len(dataset.subject_list) > 1	
 	def evaluate(self, dataset, pipelines, grid_search):
@@ -340,8 +342,10 @@ class HybridEvaluation(BaseEvaluation):
 
 				eval_model = model["Net"].module.generate_branch_model()
 				eval_classifier = define_clf(eval_model, self.eval_config)
-				create_dataset = TransformaParaWindowsDataset()
-				# TODO: Ver se aqui tambem precisa de alinhamento
+				if self.EA_in_eval:
+					create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
+				else:
+					create_dataset = TransformaParaWindowsDataset()
 				eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
 				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
