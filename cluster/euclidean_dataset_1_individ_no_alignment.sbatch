@@ -12,7 +12,7 @@
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
-python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp4.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_indiv.yaml  --num_exp 'exp_4' --dataset 'BNCI2014001' --ea 'no-alignment'
+python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp4.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_indiv.yaml  --num_exp 'exp_4_batch8' --dataset 'BNCI2014001' --ea 'no-alignment'
 
 
  
