@@ -502,10 +502,10 @@ def individual_models(dataset, paradigm, pipes, run_dir):
             results.append(res)
 
             cvclf['Net'].save_params(
-                f_params=str(run_dir / f"final_model_params_{subject}_indiv_batch8.pkl"),
-                f_history=str(run_dir / f"final_model_history_{subject}_indiv_batch8.json"),
-                f_criterion=str(run_dir / f"final_model_criterion_{subject}_indiv_batch8.pkl"),
-                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv_batch8.pkl"),
+                f_params=str(run_dir / f"final_model_params_{subject}_indiv.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_indiv.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_indiv.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv.pkl"),
             )
 
             # Test subject
@@ -638,10 +638,10 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
 
             # Initialize with the saved parameters
             ftclf.load_params(
-                f_params=str(run_dir / f"final_model_params_{subject}_indiv_batch8.pkl"),
-                f_history=str(run_dir / f"final_model_history_{subject}_indiv_batch8.json"),
-                f_criterion=str(run_dir / f"final_model_criterion_{subject}_indiv_batch8.pkl"),
-                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv_batch8.pkl"),
+                f_params=str(run_dir / f"final_model_params_{subject}_indiv.pkl"),
+                f_history=str(run_dir / f"final_model_history_{subject}_indiv.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{subject}_indiv.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv.pkl"),
             )
             # Freeze some layers
             ftclf.module_.conv_temporal.weight.requires_grad = False
