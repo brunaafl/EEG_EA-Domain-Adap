@@ -355,7 +355,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
-            ftclf = create_clf_ft(nn_model, 100)
+            ftclf = create_clf_ft(nn_model, 500)
             ftclf.initialize()
 
             # Initialize with the saved parameters
@@ -633,7 +633,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir):
         # iterate over each pipeline
         for name, clf in pipes.items():
 
-            ftclf = create_clf_ft(nn_model, 100, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=1e-5, batch_size=8)
+            ftclf = create_clf_ft(nn_model, 500, optimizer__lr=0.0625 * 0.01, optimizer__weight_decay=1e-5, batch_size=64)
             ftclf.initialize()
 
             # Initialize with the saved parameters
