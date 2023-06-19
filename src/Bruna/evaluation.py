@@ -741,7 +741,7 @@ def create_clf_ft(model, max_epochs, optimizer__lr=0.0625 * 0.01, optimizer__wei
         optimizer__weight_decay=optimizer__weight_decay,
         batch_size=batch_size,
         max_epochs=max_epochs,
-        callbacks=[EarlyStopping(monitor='valid_loss', patience=50),
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=150),
                    EpochScoring(scoring='accuracy', on_train=True, name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False, name='valid_acc',
                                 lower_is_better=False)],
