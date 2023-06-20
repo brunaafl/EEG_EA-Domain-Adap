@@ -8,7 +8,7 @@
 #SBATCH --mail-user=a.bruno@ufabc.edu.br 
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=ALL
-#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/eeg_euclidean_exp_4_dataset_1_32%j.log
+#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/eeg_euclidean_exp_4_dataset_1_%j.log
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
