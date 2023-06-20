@@ -8,7 +8,7 @@ train:
     batch_size: 64
     lr: 0.000625
     valid_split: 0.2
-    experiment_name: 'shared'
+    experiment_name: 'shared_1000epochs'
 model:
     drop_prob: 0.3
     final_conv_length: 'auto'
