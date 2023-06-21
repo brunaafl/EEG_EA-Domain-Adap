@@ -4,11 +4,11 @@ train:
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
     patience: 150
-    weight_decay: 0
+    weight_decay: 1e-5
     batch_size: 64
     lr: 0.000625
     valid_split: 0.2
-    experiment_name: 'shared_1000epochs'
+    experiment_name: 'shared_wd'
 model:
     drop_prob: 0.3
     final_conv_length: 'auto'
