@@ -100,7 +100,7 @@ def main(args):
     results_, model_list = individual_models(dataset, paradigm, pipes, run_dir)
 
     # Now, Online with 1 run for EA and ft
-    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir)
+    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
 
     results = pd.concat([results_, results_ft])
 
