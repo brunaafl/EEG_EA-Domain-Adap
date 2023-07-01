@@ -430,7 +430,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
     return results
 
 
-def individual_models(dataset, paradigm, pipes, run_dir, seed):
+def individual_models(dataset, paradigm, pipes, run_dir):
     """
 
     Create one model per subject and the with the others
