@@ -3,6 +3,7 @@ train:
     num_workers: 10
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
+    n_epochs_ft: 600
     patience: 150
     weight_decay: 1e-5
     batch_size: 64
