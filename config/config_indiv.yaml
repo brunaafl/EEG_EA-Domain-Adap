@@ -6,10 +6,10 @@ train:
     n_epochs_ft: 600
     patience: 150
     weight_decay: 1e-5
-    batch_size: 8
+    batch_size: 64
     lr: 0.000625
     valid_split: 0.2
-    experiment_name: 'indiv_8_seed137'
+    experiment_name: 'indiv_64_seed137'
 model:
     drop_prob: 0.5
     final_conv_length: 'auto'
