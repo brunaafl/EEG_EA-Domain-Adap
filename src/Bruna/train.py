@@ -81,6 +81,7 @@ def define_clf(model, config):
                                 name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False,
                                 name='valid_acc', lower_is_better=False)],
+        lrscheduler=LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0),
         device=device,
         verbose=1,
     )
