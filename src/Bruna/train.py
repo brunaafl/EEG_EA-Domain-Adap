@@ -13,42 +13,6 @@ from skorch.dataset import ValidSplit
 from skorch.helper import predefined_split, SliceDataset
 
 
-def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None):
-    weight_decay = 0
-    batch_size = 64
-    n_epochs = 100
-
-    if not split:
-        train_split_par = None
-    else:
-        train_split_par = predefined_split(val_set)
-
-    # Model (Classifier)
-    clf = EEGClassifier(
-        copy.deepcopy(model),
-        criterion=torch.nn.NLLLoss,
-        optimizer=torch.optim.AdamW,
-        train_split=train_split_par,  # predefined_split(val_set) using valid_set for validation
-        optimizer__lr=lr,
-        optimizer__weight_decay=weight_decay,
-        batch_size=batch_size,
-        callbacks=[
-            "accuracy", ("lr_scheduler",
-                         LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
-        ],
-        device=device,
-    )
-
-    clf.initialize()
-
-    clf = clone(clf)
-
-    # Model training for a specified number of epochs. `y` is None as it is already supplied
-    # in the data.
-    clf.fit(train_set, y=None, epochs=n_epochs)
-    return clf
-
-
 def define_clf(model, config):
     """
     Transform the pytorch model into classifier object to be used in the training
@@ -68,6 +32,8 @@ def define_clf(model, config):
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
+
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
@@ -78,11 +44,11 @@ def define_clf(model, config):
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+                   lrscheduler,
                    EpochScoring(scoring='accuracy', on_train=True,
                                 name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False,
                                 name='valid_acc', lower_is_better=False)],
-        lrscheduler=LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0),
         device=device,
         verbose=1,
     )
