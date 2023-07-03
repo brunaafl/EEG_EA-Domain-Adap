@@ -1,4 +1,4 @@
-seed: 80
+seed: 42
 train:
     num_workers: 10
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'

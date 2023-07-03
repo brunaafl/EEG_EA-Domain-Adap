@@ -482,6 +482,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
 
             # Test with the same data used as train
             score = _score(model, X[train], y[train], scorer)
+            print(score)
             session = 'both'
 
             res = {
