@@ -56,9 +56,9 @@ def define_clf(model, config):
     clf.initialize()
     return clf
 
-def init_model(n_chans, n_classes, input_window_samples, config):
 
-    if config.mode.type == "Deep4Net":
+def init_model(n_chans, n_classes, input_window_samples, config):
+    if config.model.type == "Deep4Net":
         model = Deep4Net(
             in_chans=n_chans,
             n_classes=n_classes,
