@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eeg_euclidean_alignment_exp_4_dataset_1
+#SBATCH --job-name=eeg_shared_d1_m1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
@@ -8,7 +8,7 @@
 #SBATCH --mail-user=a.bruno@ufabc.edu.br 
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=ALL
-#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/eeg_euclidean_exp_4_dataset_1_%j.log
+#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/eeg_indiv_d1_m1_%j.log
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 

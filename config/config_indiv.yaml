@@ -11,6 +11,7 @@ train:
     valid_split: 0.2
     experiment_name: 'indiv_lr0.001'
 model:
+    type: 'EEGNetv4'
     drop_prob: 0.5
     final_conv_length: 'auto'
 dataset:

@@ -4,7 +4,7 @@ import torch
 
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseConcatDataset
-from braindecode.models import EEGNetv4
+from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
 from sklearn.base import clone
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
@@ -61,6 +61,7 @@ def define_clf(model, config):
     -------
     clf: skorch classifier
     """
+
     weight_decay = config.train.weight_decay
     batch_size = config.train.batch_size
     lr = config.train.lr
@@ -138,13 +139,41 @@ def train_func(model, Train_data, Test_data, Val_data, device):
 
 
 def init_model(n_chans, n_classes, input_window_samples, config):
-    model = EEGNetv4(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
-        final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
-    )
+
+    if config.mode.type == "Deep4Net":
+        model = Deep4Net(
+            in_chans=n_chans,
+            n_classes=n_classes,
+            input_window_samples=input_window_samples,
+            n_filters_time=25,
+            n_filters_spat=25,
+            stride_before_pool=True,
+            n_filters_2=int(n_chans * 2),
+            n_filters_3=int(n_chans * (2 ** 2.0)),
+            n_filters_4=int(n_chans * (2 ** 3.0)),
+            final_conv_length=1,
+            drop_prob=config.model.drop_prob
+        )
+
+    elif config.model.type == 'ShallowFBCSPNet':
+        model = ShallowFBCSPNet(
+            in_chans=n_chans,
+            n_classes=n_classes,
+            input_window_samples=input_window_samples,
+            n_filters_time=40,
+            n_filters_spat=40,
+            final_conv_length=35,
+            drop_prob=config.model.drop_prob
+        )
+
+    else:
+        model = EEGNetv4(
+            n_chans,
+            n_classes,
+            input_window_samples=input_window_samples,
+            final_conv_length=config.model.final_conv_length,
+            drop_prob=config.model.drop_prob
+        )
     return model
 
 
