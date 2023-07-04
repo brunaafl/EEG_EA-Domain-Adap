@@ -5,14 +5,14 @@ train:
     n_epochs: 1000
     n_epochs_ft: 600
     patience: 150
-    weight_decay: 1e-4
+    weight_decay: 0
     batch_size: 64
     lr: 0.001
     valid_split: 0.2
     experiment_name: 'indiv_lr0.001'
 model:
     type: 'EEGNetv4'
-    drop_prob: 0.5
+    drop_prob: 0.45
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'

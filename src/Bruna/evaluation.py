@@ -20,7 +20,7 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
 from braindecode import EEGClassifier
-from skorch.callbacks import EarlyStopping, EpochScoring
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
 
 from pipeline import TransformaParaWindowsDatasetEA
@@ -737,7 +737,8 @@ def create_clf_ft(model, config):
     batch_size = config.train.batch_size
     lr = config.train.lr
     patience = config.train.patience
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
     ftclf = EEGClassifier(
         model,
@@ -749,6 +750,7 @@ def create_clf_ft(model, config):
         batch_size=batch_size,
         max_epochs=config.train.n_epochs_ft,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+                   lrscheduler,
                    EpochScoring(scoring='accuracy', on_train=True,
                                 name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False,
