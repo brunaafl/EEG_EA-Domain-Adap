@@ -3,11 +3,9 @@ import copy
 import torch
 
 from braindecode import EEGClassifier
-from braindecode.datasets import BaseConcatDataset
 from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
 from sklearn.base import clone
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import LeaveOneOut
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
 from skorch.helper import predefined_split, SliceDataset

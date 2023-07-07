@@ -7,9 +7,9 @@ train:
     patience: 150
     weight_decay: 0
     batch_size: 64
-    lr: 0.001
+    lr: 0.01
     valid_split: 0.2
-    experiment_name: 'indiv_lr0.001'
+    experiment_name: 'indiv_lr0.01'
 model:
     type: 'EEGNetv4'
     drop_prob: 0.45
