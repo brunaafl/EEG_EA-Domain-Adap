@@ -43,8 +43,11 @@ def main(args):
     )  # check if GPU is available, if True chooses to use it
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
+    channels = ["Fz", "FC3", "FCz", "FC4", "C5", "FC1", "FC2",
+                "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
+                "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy')
+    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy', channels=channels, resample=250)
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
