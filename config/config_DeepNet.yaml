@@ -7,9 +7,9 @@ train:
     patience: 150
     weight_decay: 0.0005
     batch_size: 64
-    lr: 0.01
+    lr: 0.001
     valid_split: 0.2
-    experiment_name: 'shared'
+    experiment_name: 'shared_m2'
 model:
     type: 'Deep4Net'
     drop_prob: 0.3
