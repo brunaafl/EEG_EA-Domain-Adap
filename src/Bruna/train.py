@@ -58,27 +58,19 @@ def define_clf(model, config):
 def init_model(n_chans, n_classes, input_window_samples, config):
     if config.model.type == "Deep4Net":
         model = Deep4Net(
-            in_chans=n_chans,
-            n_classes=n_classes,
+            n_chans,
+            n_classes,
             input_window_samples=input_window_samples,
-            n_filters_time=25,
-            n_filters_spat=25,
-            stride_before_pool=True,
-            n_filters_2=int(n_chans * 2),
-            n_filters_3=int(n_chans * (2 ** 2.0)),
-            n_filters_4=int(n_chans * (2 ** 3.0)),
-            final_conv_length=1,
+            final_conv_length=config.model.final_conv_length,
             drop_prob=config.model.drop_prob
         )
 
     elif config.model.type == 'ShallowFBCSPNet':
         model = ShallowFBCSPNet(
-            in_chans=n_chans,
-            n_classes=n_classes,
+            n_chans,
+            n_classes,
             input_window_samples=input_window_samples,
-            n_filters_time=40,
-            n_filters_spat=40,
-            final_conv_length=35,
+            final_conv_length=config.model.final_conv_length,
             drop_prob=config.model.drop_prob
         )
 
