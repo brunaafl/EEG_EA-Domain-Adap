@@ -43,6 +43,15 @@ def main(args):
     ----------
     args : object
     """
+    torch.set_num_threads(1)
+    print("debug")
+    print(torch.cuda.is_available())
+    print(torch.cuda.device_count())
+    print(torch.cuda.current_device())
+    for i in range(torch.cuda.device_count()):
+        print(str(i) + ": " + torch.cuda.get_device_name(i))
+        print(torch.cuda.device(i))
+
     config = OmegaConf.load(args.config_file)
     eval_config = OmegaConf.load(args.eval_config_file)
     # Setting run information
@@ -79,7 +88,7 @@ def main(args):
     input_window_samples = X.shape[2]
     rpc = len(meta['session'].unique())*len(meta['run'].unique())
 
-    model = HybridModel(8, n_chans, n_classes, input_window_samples, config=config)
+    model = HybridModel(8, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze)
     # Send model to GPU
     if cuda:
         model.cuda()
@@ -109,10 +118,12 @@ def main(args):
     pipe = Pipeline([("Hybrid_adapter", hybrid_adapter),
                      ("Net", clone(clf))])
 
+    freeze_tag = ["-Frozen", "-Not_Frozen"][args.freeze == "no-freeze"]
+
     if args.ea == 'alignment':
-        pipes["EEGNetv4_EA"] = pipe_with_align
+        pipes["EEGNetv4_EA" + freeze_tag] = pipe_with_align
     else:
-        pipes["EEGNetv4_Without_EA"] = pipe
+        pipes["EEGNetv4_Without_EA" + freeze_tag] = pipe
 
     # Define evaluation and train
     overwrite = False  # set to True if we want to overwrite cached results

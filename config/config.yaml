@@ -1,17 +1,17 @@
-seed: 23
+seed: 13
 train:
     num_workers: 10
-    run_report: '/project/outputs'
-    n_epochs: 300
-    patience: 150
+    run_report: '/workspace/outputs'
+    n_epochs: 500
+    patience: 200
     weight_decay: 0
     batch_size: 64
     lr: 0.05
     valid_split: 0.2
-    experiment_name: 'no_EA_no_freeze'
+    experiment_name: 'hybrid-more-epochs'
 model:
-    drop_prob: 0.5
+    drop_prob: 0.25
     final_conv_length: 'auto'
 
 dataset:
-    path: "/project/dataset/"
+    path: "/workspace/datasets/"

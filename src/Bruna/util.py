@@ -129,13 +129,21 @@ def parse_args():
         default="exp_1",
         choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5", "exp_hybrid"],
     )
-    
+
     parser.add_argument(
         "--ea",
         type=str,
         help="select alignment",
         default="alignment",
         choices=["alignment", "no-alignment"],
+    )
+
+    parser.add_argument(
+        "--freeze",
+        type=str,
+        help="select whether to freeze shared layers in evaluation.",
+        default="no-freeze",
+        choices=["freeze", "no-freeze"],
     )
         
     parser.add_argument(
@@ -192,6 +200,8 @@ def set_run_dir(config, args):
             + str(args.dataset)
             + "-"
             + str(args.ea)
+            + '-'
+            + str(args.freeze)
             + '-'
             + str(args.num_exp)
             + '-'

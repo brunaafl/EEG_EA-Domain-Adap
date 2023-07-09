@@ -66,13 +66,14 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 	return nn.Sequential(*(list(temp_model.children())[start:end]))
 
 class HybridModel(nn.Module):
-	def __init__(self, num_models, n_chans, n_classes, input_window_samples, config=None):
+	def __init__(self, num_models, n_chans, n_classes, input_window_samples, config=None, freeze=None):
 		super(HybridModel, self).__init__()
 		self._args = (n_chans, n_classes, input_window_samples)
 		self.config = config
 		self.num_models = num_models
 		self.shared_modules = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=6)
 		self.unique_modules = nn.ModuleList()
+		self.freeze = freeze == "freeze"
 		for model in range(num_models):
 			self.unique_modules.append(self.init_unique_modules(*self._args))
 
@@ -103,7 +104,7 @@ class HybridModel(nn.Module):
 	def generate_branch_model(self):
 		new_layers = self.init_unique_modules(*self._args)
 		cloned_layers = copy.deepcopy(self.shared_modules)
-		if self.config.model.freeze:
+		if self.freeze:
 			cloned_layers.requires_grad_(False)
 		return SpecializedModel(new_layers, cloned_layers)
 
@@ -368,7 +369,6 @@ class HybridEvaluation(BaseEvaluation):
 					"n_samples": len(train),
 					"n_channels": nchan,
 					"pipeline": name,
-					"frozen": ["not-frozen", "frozen"][model["Net"].module.config.model.freeze],
 				}
 
 				print(res)

@@ -1,7 +1,7 @@
 seed: 23
 train:
     num_workers: 10
-    run_report: '/project/outputs'
+    run_report: '/workspace/outputs'
     n_epochs: 400
     patience: 300
     weight_decay: 0
@@ -14,4 +14,4 @@ model:
     final_conv_length: 'auto'
 
 dataset:
-    path: "/project/dataset/"
+    path: "/workspace/datasets/"

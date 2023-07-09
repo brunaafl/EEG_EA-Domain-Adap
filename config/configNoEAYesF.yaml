@@ -1,7 +1,7 @@
 seed: 23
 train:
     num_workers: 10
-    run_report: '/project/outputs'
+    run_report: '/workspace/outputs'
     n_epochs: 300
     patience: 150
     weight_decay: 0
@@ -15,4 +15,4 @@ model:
     freeze: True
 
 dataset:
-    path: "/project/dataset/"
+    path: "/workspace/datasets/"
