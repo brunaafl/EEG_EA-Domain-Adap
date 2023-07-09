@@ -7,12 +7,12 @@ train:
     patience: 150
     weight_decay: 0.0005
     batch_size: 64
-    lr: 0.001
+    lr: 0.00625
     valid_split: 0.2
     experiment_name: 'shared_m2'
 model:
     type: 'Deep4Net'
-    drop_prob: 0.3
+    drop_prob: 0.5
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'
