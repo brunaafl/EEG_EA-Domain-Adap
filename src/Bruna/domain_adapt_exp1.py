@@ -129,8 +129,7 @@ def main(args):
         len_run=len_run,
     )
 
-    with torch.autograd.set_detect_anomaly(True):
-        results = evaluation.process(pipes)
+    results = evaluation.process(pipes)
     print(results.head())
 
     # Save results

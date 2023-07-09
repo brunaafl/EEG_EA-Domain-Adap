@@ -103,6 +103,8 @@ class HybridModel(nn.Module):
 	def generate_branch_model(self):
 		new_layers = self.init_unique_modules(*self._args)
 		cloned_layers = copy.deepcopy(self.shared_modules)
+		if self.config.model.freeze:
+			cloned_layers.requires_grad_(False)
 		return SpecializedModel(new_layers, cloned_layers)
 
 
@@ -294,6 +296,7 @@ class HybridEvaluation(BaseEvaluation):
 		self.eval_config = eval_config
 		self.EA_in_eval = EA_in_eval
 		self.len_run = len_run
+		self.freeze_shared = False
 	def is_valid(self, dataset):
 		return len(dataset.subject_list) > 1	
 	def evaluate(self, dataset, pipelines, grid_search):
@@ -365,6 +368,7 @@ class HybridEvaluation(BaseEvaluation):
 					"n_samples": len(train),
 					"n_channels": nchan,
 					"pipeline": name,
+					"frozen": ["not-frozen", "frozen"][model["Net"].module.config.model.freeze],
 				}
 
 				print(res)

@@ -3,11 +3,11 @@ train:
     num_workers: 10
     run_report: '/project/outputs'
     n_epochs: 400
-    patience: 200
+    patience: 300
     weight_decay: 0
     batch_size: 9
     lr: 0.005
-    valid_split: 0.2
+    valid_split: 0.1
     experiment_name: 'exp5_comp'
 model:
     drop_prob: 0.5

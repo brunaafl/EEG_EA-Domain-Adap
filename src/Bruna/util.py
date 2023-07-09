@@ -127,7 +127,7 @@ def parse_args():
         type=str,
         help="select which experiment we gonna run.",
         default="exp_1",
-        choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5"],
+        choices=["exp_1", "exp_2", "exp_3", "exp_4", "exp_5", "exp_hybrid"],
     )
     
     parser.add_argument(
