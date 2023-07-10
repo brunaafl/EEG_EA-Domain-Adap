@@ -141,7 +141,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
-def shared_model(dataset, paradigm, pipes, run_dir):
+def shared_model(dataset, paradigm, pipes, run_dir, config):
     """
 
     Create one model per subject and the with the others
@@ -199,7 +199,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 # Select runs used for the EA test
                 # test_runs we are going to use for test
                 # aux_run we are going to use for the EA
-                test_runs, aux_run = select_run(runs, sessions, test, session)
+                test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
                 len_run = sum(aux_run * 1)
 
                 # We exclude aux EA trials so the results are comparable
@@ -282,7 +282,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
     return results
 
 
-def select_run(runs, sessions, test, session='session_T'):
+def select_run(runs, sessions, test, dataset):
     """
     Select the run that is going to be used as auxiliar
 
@@ -298,9 +298,22 @@ def select_run(runs, sessions, test, session='session_T'):
 
     runs_ = np.unique(runs[test])
 
-    # Select the first run from given session
-    r = runs[test] == runs_[0]
-    s = sessions[test] == session
+    if dataset == '001-2014':
+
+        # Select the first run from given session
+        r = runs[test] == runs_[0]
+        s = sessions[test] == 'session_T'
+
+    elif dataset == 'Schirrmeister2017':
+        r = runs[test] == 'train'
+        r[0:40] = False
+        s = sessions[test] == 'session_0'
+
+    elif dataset == 'Cho2017':
+        r = runs[test] == 'test'
+        r[199:240] = False
+        s = sessions[test] == 'session_0'
+
     aux_run = np.logical_and(r, s)
 
     # Select the opposit for the test
@@ -371,7 +384,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
             # Now test
             for session in np.unique(sessions[test]):
 
-                test_runs, aux_run = select_run(runs, sessions, test, session)
+                test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
                 len_run = sum(aux_run * 1)
 
                 # Compute train data
@@ -457,7 +470,7 @@ def freeze(model, config):
     return model
 
 
-def individual_models(dataset, paradigm, pipes, run_dir):
+def individual_models(dataset, paradigm, pipes, run_dir, config):
     """
 
     Create one model per subject and the with the others
@@ -547,7 +560,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, session)
+                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
 
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
@@ -687,7 +700,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, session)
+                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
