@@ -4,11 +4,10 @@ import torch
 
 from braindecode import EEGClassifier
 from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
-from sklearn.base import clone
 from sklearn.metrics import roc_auc_score
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
-from skorch.helper import predefined_split, SliceDataset
+from skorch.helper import SliceDataset
 
 
 def define_clf(model, config):
@@ -55,13 +54,45 @@ def define_clf(model, config):
     return clf
 
 
+def clf_tuning(model, config):
+
+    batch_size = config.train.batch_size
+    n_epochs = config.train.n_epochs
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Create Classifier
+    clf = EEGClassifier(
+        model,
+        criterion=torch.nn.NLLLoss,
+        optimizer=torch.optim.AdamW,
+        optimizer__lr=[],
+        optimizer__weight_decay=[],
+        batch_size=batch_size,
+        max_epochs=n_epochs,
+        train_split=None,  # train /test split is handled by GridSearchCV
+        callbacks=[
+            "accuracy",
+            ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
+        ],
+        device=device,
+    )
+
+    return clf
+
 def init_model(n_chans, n_classes, input_window_samples, config):
     if config.model.type == "Deep4Net":
         model = Deep4Net(
-            n_chans,
-            n_classes,
+            in_chans=n_chans,
+            n_classes=n_classes,
             input_window_samples=input_window_samples,
-            final_conv_length=config.model.final_conv_length,
+            n_filters_time=5,
+            n_filters_spat=5,
+            stride_before_pool=True,
+            n_filters_2=int(2 ** 2),
+            n_filters_3=int(2 ** 3),
+            n_filters_4=int(2 ** 3),
+            final_conv_length=config.model.final_conv_lengt,
             drop_prob=config.model.drop_prob
         )
 
