@@ -92,7 +92,7 @@ def init_model(n_chans, n_classes, input_window_samples, config):
             n_filters_2=int(2 ** 2),
             n_filters_3=int(2 ** 3),
             n_filters_4=int(2 ** 3),
-            final_conv_length=config.model.final_conv_lengt,
+            final_conv_length=config.model.final_conv_length,
             drop_prob=config.model.drop_prob
         )
 
