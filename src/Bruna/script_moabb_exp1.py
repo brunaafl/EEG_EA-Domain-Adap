@@ -21,7 +21,7 @@ from util import parse_args, set_determinism, set_run_dir
 from paradigm import MotorImagery_, LeftRightImagery_
 
 """
-For the joint model
+For the shared model
 """
 
 
@@ -68,8 +68,8 @@ def main(args):
     input_window_samples = X.shape[2]
     runs = meta.run.values
     sessions = meta.session.values
-    one_session = sessions == "session_T"
-    one_run = runs == 'run_0'
+    one_session = sessions == np.unique(sessions)[0]
+    one_run = runs == np.unique(runs)[0]
     run_session = np.logical_and(one_session, one_run)
     len_run = sum(run_session * 1)
 

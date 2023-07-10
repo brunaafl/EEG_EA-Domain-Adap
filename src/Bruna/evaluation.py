@@ -671,14 +671,9 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                 f_criterion=str(run_dir / f"final_model_criterion_{subject}_indiv.pkl"),
                 f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_indiv.pkl"),
             )
+
             # Freeze some layers
-            ftclf.module_.conv_temporal.weight.requires_grad = False
-            ftclf.module_.bnorm_temporal.weight.requires_grad = False
-            ftclf.module_.conv_spatial.weight.requires_grad = False
-            ftclf.module_.bnorm_1.weight.requires_grad = False
-            ftclf.module_.conv_separable_depth.weight.requires_grad = False
-            ftclf.module_.conv_separable_point.weight.requires_grad = False
-            ftclf.module_.bnorm_2.weight.requires_grad = False
+            freeze(ftclf, config)
 
             # Now test
             # Keep this division?

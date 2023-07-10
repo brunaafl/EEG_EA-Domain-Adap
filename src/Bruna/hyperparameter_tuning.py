@@ -9,20 +9,19 @@ import pandas as pd
 
 from omegaconf import OmegaConf
 
-from sklearn.pipeline import Pipeline
-
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from evaluation import individual_models, online_indiv
-from train import define_clf, init_model
+from train import init_model, clf_tuning
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
 from paradigm import MotorImagery_, LeftRightImagery_
 
+from sklearn.model_selection import GridSearchCV, LeaveOneGroupOut, train_test_split
+from sklearn.preprocessing import LabelEncoder
+
 """
-For the imdividual model
+For the shared model
 """
 
 
@@ -47,7 +46,7 @@ def main(args):
                 "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
                 "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy', channels=channels, resample=250)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', channels=channels, resample=250)
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -65,58 +64,59 @@ def main(args):
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
-    n_chans = X.shape[1]
-    input_window_samples = X.shape[2]
-    runs = meta.run.values
-    sessions = meta.session.values
-    one_session = sessions == np.unique(sessions)[0]
-    one_run = runs == np.unique(runs)[0]
-    run_session = np.logical_and(one_session, one_run)
-    len_run = sum(run_session * 1)
+    X_, labels_, meta_ = paradigm.get_data(dataset=dataset, subjects=[1])
+    n_chans = X_.shape[1]
+    input_window_samples = X_.shape[2]
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
     if cuda:
         model.cuda()
 
-    # Create Classifier
-    clf = define_clf(model, config)
+    clf = clf_tuning(model, config)
 
-    # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
-    create_dataset = TransformaParaWindowsDataset()
+    # Epochs array for whole dataset
+    X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=True)
 
-    pipes = {}
+    group = meta.subject.values
 
-    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
-                                ("Net", clone(clf))])
-    pipe = Pipeline([("Braindecode_dataset", create_dataset),
-                     ("Net", clone(clf))])
+    X_train, X_test, y_train, y_test, group_train, group_test = \
+        train_test_split(X.get_data(), y, group, test_size=config.train.valid_split, random_state=config.seed)
 
-    if args.ea == 'alignment':
-        pipes["EEGNetv4_EA"] = pipe_with_align
-    else:
-        pipes["EEGNetv4_Without_EA"] = pipe
+    loo = LeaveOneGroupOut()
 
-    # Evaluation for this experiment
-    results_, model_list = individual_models(dataset, paradigm, pipes, run_dir)
+    param_grid = {
+        'optimizer__lr': [0.000625, 0.000525, 0.000325, 0.000225],
+        'optimizer__weight_decay': [0.0001, 0.0002, 0.0004]
+    }
 
-    # Now, Online with 1 run for EA and ft
-    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
+    search = GridSearchCV(
+        estimator=clone(clf),
+        param_grid=param_grid,
+        cv=loo,
+        return_train_score=True,
+        scoring='accuracy',
+        refit=True,
+        verbose=1,
+        error_score='raise'
+    )
 
-    results = pd.concat([results_, results_ft])
+    le = LabelEncoder()
+    y_train = le.fit_transform(y_train)
 
-    # results = evaluation.process(pipes)
-    print(results.head())
+    clf = search.fit(X_train, y_train, groups=group_train)
 
-    # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    search_results = pd.DataFrame(clf.cv_results_)
 
- 
+    best_run = search_results[search_results['rank_test_score'] == 1].squeeze()
+    print(f"Best hyperparameters were {best_run['params']} which gave a validation "
+          f"accuracy of {best_run['mean_test_score'] * 100:.2f}% (training "
+          f"accuracy of {best_run['mean_train_score'] * 100:.2f}%).")
+
+    score = search.score(X_test, y_test)
+    print(f"Eval accuracy is {score * 100:.2f}%.")
+
     print("---------------------------------------")
-
-    # return results
 
 
 # Press the green button in the gutter to run the script.
