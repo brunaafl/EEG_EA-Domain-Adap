@@ -141,7 +141,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
-def shared_model(dataset, paradigm, pipes, run_dir, config):
+def shared_model(dataset, paradigm, pipes, run_dir):
     """
 
     Create one model per subject and the with the others
@@ -470,7 +470,7 @@ def freeze(model, config):
     return model
 
 
-def individual_models(dataset, paradigm, pipes, run_dir, config):
+def individual_models(dataset, paradigm, pipes, run_dir):
     """
 
     Create one model per subject and the with the others
