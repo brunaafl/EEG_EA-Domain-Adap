@@ -86,8 +86,8 @@ def main(args):
     loo = LeaveOneGroupOut()
 
     param_grid = {
-        'optimizer__lr': [0.000625, 0.000525, 0.000325, 0.000225],
-        'optimizer__weight_decay': [0.0001, 0.0002, 0.0004]
+        'optimizer__lr': [0.0008, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002],
+        'optimizer__weight_decay': [0.0001, 0.0002, 0.0003]
     }
 
     search = GridSearchCV(
