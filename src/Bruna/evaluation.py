@@ -17,6 +17,8 @@ from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
 
+from mlxtend.classifier import EnsembleVoteClassifier
+
 from tqdm import tqdm
 
 from braindecode import EEGClassifier
@@ -785,8 +787,103 @@ def create_clf_ft(model, config):
     return ftclf
 
 
-def ensemble_simple(dataset, paradigm, model_list):
-    return
+def select_weights(X_test, y_test, scorer, models, n=5, exp=True):
+    scores = []
+    for model in models:
+        score = _score(model, X_test, y_test, scorer)
+        scores.append(score)
+
+    scores = np.array(scores)
+    scores_idx = np.argsort(scores)[::-1][:n]
+    w = np.sort(scores)[:n]
+
+    if exp:
+        w = np.exp(w)
+        w = w / sum(w)
+
+    else:
+        w = w / sum(w)
+
+    return w, scores_idx
+
+
+def ensemble_simple(dataset, paradigm, run_dir, ea=None, model_list=None, exp=True):
+
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    nchan = (
+        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+    )
+
+    results = []
+    # for each train subject
+    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+
+        subject = groups[test[0]]
+
+        if model_list is not None:
+
+            clfs = model_list[:, 0]
+            models = model_list[:, 1]
+            clfs.pop(subject - 1)
+            models.pop(subject - 1)
+
+            w, idx = select_weights(X[test], y[test], scorer, models, n=int(len(models)/2))
+            clfs = clfs[idx]
+
+            eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
+                                          voting='soft', fit_base_estimators=False)
+
+            X_train = X[train]
+            y_train = y[train]
+
+            if ea is not None:
+                len_run = ea
+                X_train = split_runs_EA(X_train, len_run)
+
+            t_start = time()
+            emodel = eclf.fit(X_train, y_train)
+            duration = time() - t_start
+
+            for session in np.unique(sessions):
+                ix = sessions[test] == session
+                score = _score(emodel, X[test[ix]], y[test[ix]], scorer)
+
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": idx,
+                    "test": subject,
+                    "session": session,
+                    "score": score,
+                    "type": "Online",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "exp": f"ensemble_{exp}_{int(len(models)/2)}"
+                }
+
+                results.append(res)
+
+                test_runs, aux_run = select_run(runs, sessions, test, session)
+
+
+
+
+    return results
 
 
 def eval_exp2(dataset, paradigm, pipes):
