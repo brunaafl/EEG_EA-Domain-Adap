@@ -201,7 +201,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 # Select runs used for the EA test
                 # test_runs we are going to use for test
                 # aux_run we are going to use for the EA
-                test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
+                test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
                 len_run = sum(aux_run * 1)
 
                 # We exclude aux EA trials so the results are comparable
@@ -284,7 +284,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
     return results
 
 
-def select_run(runs, sessions, test, dataset):
+def select_run(runs, sessions, test, dataset, session):
     """
     Select the run that is going to be used as auxiliar
 
@@ -304,7 +304,7 @@ def select_run(runs, sessions, test, dataset):
 
         # Select the first run from given session
         r = runs[test] == runs_[0]
-        s = sessions[test] == 'session_T'
+        s = sessions[test] == session
 
     elif dataset == 'Schirrmeister2017':
         r = runs[test] == 'train'
@@ -386,7 +386,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
             # Now test
             for session in np.unique(sessions[test]):
 
-                test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
+                test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
                 len_run = sum(aux_run * 1)
 
                 # Compute train data
@@ -562,7 +562,7 @@ def individual_models(dataset, paradigm, pipes, run_dir):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
+                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
 
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
@@ -702,7 +702,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code)
+                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
@@ -819,8 +819,8 @@ def select_weights(X_test, y_test, scorer, models, n=5, exp=True):
 
     return w, scores_idx
 
-
-def ensemble_simple(dataset, paradigm, run_dir, ea=None, model_list=None, exp=True):
+# WHAT I'M GOING TO DO:
+def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
 
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
     # extract metadata
@@ -843,18 +843,18 @@ def ensemble_simple(dataset, paradigm, run_dir, ea=None, model_list=None, exp=Tr
 
     results = []
     # for each train subject
-    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
 
         subject = groups[test[0]]
 
         if model_list is not None:
 
-            clfs = model_list[:, 0]
-            models = model_list[:, 1]
+            clfs = model_list[:][0].copy()
+            models = model_list[:][1].copy()
             clfs.pop(subject - 1)
             models.pop(subject - 1)
 
-            w, idx = select_weights(X[test], y[test], scorer, models, n=int(len(models)/2))
+            w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(models) / 2))
             clfs = clfs[idx]
 
             eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
@@ -872,8 +872,50 @@ def ensemble_simple(dataset, paradigm, run_dir, ea=None, model_list=None, exp=Tr
             duration = time() - t_start
 
             for session in np.unique(sessions):
+
+                # Firstly, offline
                 ix = sessions[test] == session
-                score = _score(emodel, X[test[ix]], y[test[ix]], scorer)
+
+                X_test = X[test[ix]]
+                y_test = y[test[ix]]
+
+                if ea is not None:
+                    len_run = ea
+                    X_test = split_runs_EA(X[test[ix]], len_run)
+                    y_test = y[test[ix]]
+
+                score = _score(emodel, X_test, y_test, scorer)
+
+                res = {
+                    "time": duration,
+                    "dataset": dataset.code,
+                    "subject": idx,
+                    "test": subject,
+                    "session": session,
+                    "score": score,
+                    "type": "Offline",
+                    "ft": "Without",
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "exp": f"ensemble_{exp}_{int(len(models) / 2)}"
+                }
+
+                results.append(res)
+
+                # Simulated online
+                test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
+
+                Test = X[test[test_runs]]
+                y_t = y[test[test_runs]]
+
+                if ea is not None:
+                    # Then, test with one run for ft
+                    Aux_trials = X[test[aux_run]]
+                    _, r_op = euclidean_alignment(Aux_trials.get_data())
+                    # Use ref matrix to align test data
+                    X_t = np.matmul(r_op, Test.get_data())
+                    # Compute score
+                    score = _score(emodel, X_t, y_t, scorer)
 
                 res = {
                     "time": duration,
@@ -886,12 +928,61 @@ def ensemble_simple(dataset, paradigm, run_dir, ea=None, model_list=None, exp=Tr
                     "ft": "Without",
                     "n_samples": len(train),
                     "n_channels": nchan,
-                    "exp": f"ensemble_{exp}_{int(len(models)/2)}"
+                    "exp": f"online_{exp}_{int(len(models) / 2)}"
                 }
 
                 results.append(res)
 
-                test_runs, aux_run = select_run(runs, sessions, test, session)
+        else:
+            return 'No models were given'
+
+    return results
+
+
+def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    nchan = (
+        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+    )
+
+    results = []
+    model_list = []
+    # for each train subject
+    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+
+        subject = groups[test[0]]
+
+        for s in np.unique(groups[train]):
+            clf = create_clf_ft(model, config)
+            clf.initialize()
+
+            # Initialize with the saved parameters
+            clf.load_params(
+                f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
+                f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
+                f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
+                f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
+            )
+
+            model_list.append(clf)
+
+        clfs = model_list.copy()
+        clfs.pop(subject - 1)
+        w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(clfs) / 2))
 
 
 
