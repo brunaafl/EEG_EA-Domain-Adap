@@ -770,10 +770,10 @@ def create_clf_ft(model, config):
     if cuda:
         torch.backends.cudnn.benchmark = True
 
-    weight_decay = config.train.weight_decay
+    weight_decay = config.ft.weight_decay
     batch_size = config.train.batch_size
-    lr = config.train.lr
-    patience = config.train.patience
+    lr = config.ft.lr
+    patience = config.ft.patience
 
     lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
@@ -785,7 +785,7 @@ def create_clf_ft(model, config):
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
-        max_epochs=config.train.n_epochs_ft,
+        max_epochs=config.ft.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
                    lrscheduler,
                    EpochScoring(scoring='accuracy', on_train=True,
@@ -819,9 +819,22 @@ def select_weights(X_test, y_test, scorer, models, n=5, exp=True):
 
     return w, scores_idx
 
+
+def divide(list_2d):
+    length = len(list_2d)
+
+    l1 = []
+    l2 = []
+
+    for i in range(length):
+        l1.append(list_2d[i][0])
+        l2.append(list_2d[i][1])
+
+    return l1, l2
+
+
 # WHAT I'M GOING TO DO:
 def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
-
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
     # extract metadata
     groups = metadata.subject.values
@@ -849,8 +862,7 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
 
         if model_list is not None:
 
-            clfs = model_list[:][0].copy()
-            models = model_list[:][1].copy()
+            clfs, models = divide(model_list)
             clfs.pop(subject - 1)
             models.pop(subject - 1)
 
@@ -983,9 +995,6 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         clfs = model_list.copy()
         clfs.pop(subject - 1)
         w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(clfs) / 2))
-
-
-
 
     return results
 
