@@ -70,7 +70,7 @@ def clf_tuning(model, config):
         optimizer__weight_decay=[],
         batch_size=batch_size,
         max_epochs=n_epochs,
-        train_split=None,  # train /test split is handled by GridSearchCV
+        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),  # train /test split is handled by GridSearchCV
         callbacks=[
             "accuracy",
             ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),

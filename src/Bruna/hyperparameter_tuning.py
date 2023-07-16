@@ -85,10 +85,19 @@ def main(args):
 
     loo = LeaveOneGroupOut()
 
-    param_grid = {
-        'optimizer__lr': [0.0008, 0.0006, 0.0005, 0.0004, 0.0003, 0.0002],
-        'optimizer__weight_decay': [0.0001, 0.0002, 0.0003]
-    }
+    if config.model.type == 'Deep4Net':
+
+        param_grid = {
+            'optimizer__lr': [0.000725, 0.000625, 0.000525, 0.000425, 0.000325, 0.000225],
+            'optimizer__weight_decay': [0.00001, 0.0001, 0.0002]
+        }
+
+    elif config.model.type == 'ShallowFBCSPNet':
+
+        param_grid = {
+            'optimizer__lr': [0.000825, 0.000725, 0.000625, 0.000525],
+            'optimizer__weight_decay': [0, 0.0000125, 0.000125]
+        }
 
     search = GridSearchCV(
         estimator=clone(clf),
