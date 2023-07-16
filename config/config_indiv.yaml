@@ -4,12 +4,17 @@ train:
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
     n_epochs_ft: 600
-    patience: 200
+    patience: 250
     weight_decay: 0
     batch_size: 64
     lr: 0.001
     valid_split: 0.2
-    experiment_name: 'indiv_lr0.001_p200'
+    experiment_name: 'indiv_m1_250'
+ft:
+    n_epochs: 600
+    lr: 0.000625
+    patience: 250
+    weight_decay: 0
 model:
     type: 'EEGNetv4'
     drop_prob: 0.45
