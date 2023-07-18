@@ -55,7 +55,6 @@ def define_clf(model, config):
 
 
 def clf_tuning(model, config):
-
     batch_size = config.train.batch_size
     n_epochs = config.train.n_epochs
 
@@ -70,7 +69,8 @@ def clf_tuning(model, config):
         optimizer__weight_decay=[],
         batch_size=batch_size,
         max_epochs=n_epochs,
-        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),  # train /test split is handled by GridSearchCV
+        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
+        # train /test split is handled by GridSearchCV
         callbacks=[
             "accuracy",
             ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
@@ -79,6 +79,7 @@ def clf_tuning(model, config):
     )
 
     return clf
+
 
 def init_model(n_chans, n_classes, input_window_samples, config):
     if config.model.type == "Deep4Net":
