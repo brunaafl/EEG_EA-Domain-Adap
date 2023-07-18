@@ -2,7 +2,7 @@ seed: 42
 train:
     num_workers: 10
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
-    n_epochs: 500
+    n_epochs: 1000
     patience: 250
     batch_size: 64
     valid_split: 0.2
