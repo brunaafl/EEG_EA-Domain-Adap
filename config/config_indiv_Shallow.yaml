@@ -12,12 +12,12 @@ train:
     experiment_name: 'indiv_m2_250'
 ft:
     n_epochs: 600
-    lr: 0.000625
+    lr: 0.000325
     patience: 250
     weight_decay: 0
 model:
     type: 'ShallowFBCSPNet'
-    drop_prob: 0.45
+    drop_prob: 0.35
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'
