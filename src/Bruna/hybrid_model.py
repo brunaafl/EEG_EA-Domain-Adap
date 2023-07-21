@@ -342,7 +342,8 @@ class HybridEvaluation(BaseEvaluation):
 				model = deepcopy(clf).fit(X[train], None, Hybrid_adapter__labels=y[train], Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 				duration = time() - t_start
 
-				ix = sessions[test] == 'session_T'
+				ix = test < (self.len_run*2 + test[0])
+				#ix = sessions[test] == 'session_T'
 
 				eval_model = model["Net"].module.generate_branch_model()
 				eval_classifier = define_clf(eval_model, self.eval_config)
@@ -354,7 +355,9 @@ class HybridEvaluation(BaseEvaluation):
 
 				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
 
-				ix_eval = sessions[test] == 'session_E'
+				ix_eval =  test >= (self.len_run*2 + test[0])
+				#ix_eval = sessions[test] == 'session_E'
+				create_dataset.y = y[test[ix_eval]]
 
 				score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
 				nchan = (

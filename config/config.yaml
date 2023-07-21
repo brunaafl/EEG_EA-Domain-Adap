@@ -1,16 +1,16 @@
-seed: 13
+seed: 50
 train:
     num_workers: 10
     run_report: '/workspace/outputs'
-    n_epochs: 500
-    patience: 200
+    n_epochs: 1000
+    patience: 400
     weight_decay: 0
-    batch_size: 64
+    batch_size: 16
     lr: 0.05
     valid_split: 0.2
-    experiment_name: 'hybrid-more-epochs'
+    experiment_name: 'hybrid-20percent-16batch'
 model:
-    drop_prob: 0.25
+    drop_prob: 0.4
     final_conv_length: 'auto'
 
 dataset:

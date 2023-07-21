@@ -10,7 +10,7 @@ train:
     valid_split: 0.1
     experiment_name: 'exp5_comp'
 model:
-    drop_prob: 0.5
+    drop_prob: 0.3
     final_conv_length: 'auto'
 
 dataset:
