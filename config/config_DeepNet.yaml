@@ -6,9 +6,9 @@ train:
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
-    lr: 0.000625
+    lr: 0.00025
     valid_split: 0.2
-    experiment_name: 'shared_m2_250'
+    experiment_name: 'shared_m2_250_0.00025'
 ft:
     n_epochs: 600
     weight_decay: 1e-5
