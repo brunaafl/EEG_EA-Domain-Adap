@@ -98,7 +98,6 @@ def main(args):
         pipes["EEGNetv4_EA"] = pipe_with_align
     else:
         pipes["EEGNetv4_Without_EA"] = pipe
-
     # Now, Online with 1 run for EA and ft
     results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
 

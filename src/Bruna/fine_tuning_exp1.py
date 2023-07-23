@@ -85,7 +85,6 @@ def main(args):
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
-
     pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
