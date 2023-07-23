@@ -106,7 +106,7 @@ def init_model(n_chans, n_classes, input_window_samples, config):
             drop_prob=config.model.drop_prob
         )
 
-    else:
+    elif config.model.type == 'EEGNetv4':
         model = EEGNetv4(
             n_chans,
             n_classes,
