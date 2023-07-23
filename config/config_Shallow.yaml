@@ -4,16 +4,16 @@ train:
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
     patience: 250
-    weight_decay: 0
+    weight_decay: 1e-5
     batch_size: 64
     lr: 0.000425
     valid_split: 0.2
-    experiment_name: 'shared_m3_250_0.0001ft'
+    experiment_name: 'shared_m3_250_0.000125ft'
 ft:
     n_epochs: 600
-    lr: 0.0001
+    lr: 0.000125
     patience: 250
-    weight_decay: 0
+    weight_decay: 1e-5
 model:
     type: 'ShallowFBCSPNet'
     drop_prob: 0.25
