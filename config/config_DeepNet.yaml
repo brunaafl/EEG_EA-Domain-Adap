@@ -3,17 +3,17 @@ train:
     num_workers: 10
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
-    patience: 250
+    patience: 150
     weight_decay: 1e-5
     batch_size: 64
-    lr: 0.00025
+    lr: 0.000725
     valid_split: 0.2
     experiment_name: 'shared_m2_250_0.00025'
 ft:
     n_epochs: 600
     weight_decay: 1e-5
-    patience: 250
-    lr: 0.000125
+    patience: 150
+    lr: 0.000425
 model:
     type: 'Deep4Net'
     drop_prob: 0.4
