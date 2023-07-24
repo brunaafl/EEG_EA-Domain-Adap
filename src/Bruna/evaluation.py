@@ -747,16 +747,16 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
 
-                    #aux_test = test[aux_idx]
+                    aux_test = test[aux_idx]
 
                     # Compute train data
-                    #train_idx = ftdata(runs, sessions, train, aux_test, dataset.code)
-                    #X_train = X[train_idx].get_data()
-                    #y_train = y[train_idx]
-
-                    train_idx = np.concatenate((train, test[aux_idx]))
+                    train_idx = ftdata(runs, sessions, train, aux_test, dataset.code)
                     X_train = X[train_idx].get_data()
                     y_train = y[train_idx]
+
+                    #train_idx = np.concatenate((train, test[aux_idx]))
+                    #X_train = X[train_idx].get_data()
+                    #y_train = y[train_idx]
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
