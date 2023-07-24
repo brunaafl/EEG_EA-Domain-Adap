@@ -29,7 +29,7 @@ def define_clf(model, config):
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs-1, eta_min=0)
 
     clf = EEGClassifier(
         model,
@@ -47,7 +47,6 @@ def define_clf(model, config):
                    EpochScoring(scoring='accuracy', on_train=False,
                                 name='valid_acc', lower_is_better=False)],
         device=device,
-        verbose=1,
     )
 
     clf.initialize()
@@ -103,7 +102,8 @@ def init_model(n_chans, n_classes, input_window_samples, config):
             n_classes,
             input_window_samples=input_window_samples,
             final_conv_length=config.model.final_conv_length,
-            drop_prob=config.model.drop_prob
+            drop_prob=config.model.drop_prob,
+            filter_time_length=10,
         )
 
     elif config.model.type == 'EEGNetv4':
