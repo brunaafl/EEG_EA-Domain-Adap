@@ -285,6 +285,43 @@ def shared_model(dataset, paradigm, pipes, run_dir):
     return results
 
 
+def ftdata(runs, sessions, train, aux_test, dataset):
+    """
+    Select the run that is going to be used as auxiliar
+
+    :param train:
+    :param dataset:
+    :param aux_test: test[aux_run]
+    :param runs: array indicating eaach trial's run
+    :param sessions: array indicating eaach trial's session
+
+    :return:
+        :param test_runs: boolean array with True in the index of test trials (and False elsewhere)
+        :param aux_run : boolean array with True in the index of aux trials (and False elsewhere)
+    """
+
+    runs_ = np.unique(runs[train])
+
+    if dataset == '001-2014':
+        # Select the first run from first session
+        r = runs[train] == runs_[0]
+        s = sessions[train] == 'session_T'
+
+    elif dataset == 'Schirrmeister2017':
+        r = runs[train] == 'train'
+        r[0:40] = False
+        s = sessions[train] == 'session_0'
+
+    elif dataset == 'Cho2017':
+        r = runs[train] == 'test'
+        r[199:240] = False
+        s = sessions[train] == 'session_0'                    ''
+
+    aux_run = np.logical_and(r, s)
+    train_idx = np.concatenate((train[aux_run], aux_test))
+
+    return train_idx
+
 def select_run(runs, sessions, test, dataset, session):
     """
     Select the run that is going to be used as auxiliar
@@ -390,8 +427,11 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                 test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
                 len_run = sum(aux_run * 1)
 
+                aux_test = test[aux_run]
+
                 # Compute train data
-                train_idx = np.concatenate((train, test[aux_run]))
+                train_idx = ftdata(runs, sessions, train, aux_test, dataset)
+
                 X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
 
@@ -708,8 +748,10 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
 
+                    aux_test = test[aux_idx]
+
                     # Compute train data
-                    train_idx = np.concatenate((train, test[aux_idx]))
+                    train_idx = ftdata(runs, sessions, train, aux_test, dataset)
                     X_train = X[train_idx].get_data()
                     y_train = y[train_idx]
 
@@ -776,7 +818,7 @@ def create_clf_ft(model, config):
     lr = config.ft.lr
     patience = config.ft.patience
 
-    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs-1, eta_min=0)
 
     ftclf = EEGClassifier(
         model,
@@ -794,7 +836,6 @@ def create_clf_ft(model, config):
                    EpochScoring(scoring='accuracy', on_train=False,
                                 name='valid_acc', lower_is_better=False)],
         device=device,
-        verbose=1,
     )
 
     ftclf.initialize()
