@@ -19,9 +19,12 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
 
+        if y is None:
+            y = self.y
+
         dataset = create_from_X_y(
             X=X.get_data(),
-            y=self.y,
+            y=y,
             window_size_samples=X.get_data().shape[2],
             window_stride_samples=X.get_data().shape[2],
             drop_last_window=False,
@@ -49,9 +52,12 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         X_EA = split_runs_EA(X.get_data(), self.len_run)
 
+        if y is None:
+            y = self.y
+
         dataset = create_from_X_y(
             X=X_EA,
-            y=self.y,
+            y=y,
             window_size_samples=X.get_data().shape[2],
             window_stride_samples=X.get_data().shape[2],
             drop_last_window=False,
