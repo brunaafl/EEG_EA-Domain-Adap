@@ -13,7 +13,7 @@ ft:
     n_epochs: 600
     weight_decay: 1e-5
     patience: 250
-    lr: 0.000225
+    lr: 0.000125
 model:
     type: 'EEGNetv4'
     drop_prob: 0.25
