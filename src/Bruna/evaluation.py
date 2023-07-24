@@ -213,6 +213,7 @@ def shared_model(dataset, paradigm, pipes, run_dir):
                 Test = X[test[test_idx]]
                 y_t = y[test[test_idx]]
                 score = _score(model, Test, y_t, scorer)
+                print(score)
 
                 res = {
                     "time": duration,
