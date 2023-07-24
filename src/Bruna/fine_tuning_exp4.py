@@ -96,24 +96,29 @@ def main(args):
 
     if args.ea == 'alignment':
         pipes[f"{config.model.type}_EA"] = pipe_with_align
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m1_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     else:
         pipes[f"{config.model.type}_Without_EA"] = pipe
-
-    # Evaluation for this experiment
-    results_, model_list = individual_models(dataset, paradigm, pipes, run_dir)
-
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m1_final-BNCI2014001-no' \
+                  '-alignment-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
+    results = online_indiv(dataset, paradigm, pipes, model, run, config)
 
-    results = pd.concat([results_, results_ft])
-
-    # results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
- 
+
     print("---------------------------------------")
 
     # return results

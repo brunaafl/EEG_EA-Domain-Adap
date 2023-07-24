@@ -7,22 +7,21 @@ import torch
 import numpy as np
 import pandas as pd
 
-from omegaconf import OmegaConf
-
-from sklearn.pipeline import Pipeline
-
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+
+from omegaconf import OmegaConf
+from sklearn.pipeline import Pipeline
+from sklearn.base import clone
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from evaluation import individual_models, online_indiv
 from train import define_clf, init_model
+from evaluation import online_shared
 from util import parse_args, set_determinism, set_run_dir
-from sklearn.base import clone
 from paradigm import MotorImagery_, LeftRightImagery_
 
 """
-For the imdividual model
+For the shared model
 """
 
 
@@ -47,7 +46,7 @@ def main(args):
                 "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
                 "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy', channels=channels, resample=250)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', resample=250)
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -61,7 +60,6 @@ def main(args):
         dataset = PhysionetMI()
         paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
-    datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
@@ -83,12 +81,10 @@ def main(args):
     # Create Classifier
     clf = define_clf(model, config)
 
-    # Create pipeline
     create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
-
     pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
@@ -96,24 +92,34 @@ def main(args):
 
     if args.ea == 'alignment':
         pipes[f"{config.model.type}_EA"] = pipe_with_align
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "Deep4Net":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     else:
         pipes[f"{config.model.type}_Without_EA"] = pipe
-
-    # Evaluation for this experiment
-    results_, model_list = individual_models(dataset, paradigm, pipes, run_dir)
-
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-no' \
+                  '-alignment-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "Deep4Net":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
+    results = online_shared(dataset, paradigm, pipes, model, run, config)
 
-    results = pd.concat([results_, results_ft])
-
-    # results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_fine-tuning_results.csv")
 
- 
     print("---------------------------------------")
 
     # return results
