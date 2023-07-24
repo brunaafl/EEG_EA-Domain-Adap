@@ -92,9 +92,9 @@ def main(args):
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':
-        pipes["EEGNetv4_EA"] = pipe_with_align
+        pipes[f"{config.model.type}_EA"] = pipe_with_align
     else:
-        pipes["EEGNetv4_Without_EA"] = pipe
+        pipes[f"{config.model.type}_Without_EA"] = pipe
 
     # Define evaluation and train
     # First, offline, zero-shot and online with 1 run for EA

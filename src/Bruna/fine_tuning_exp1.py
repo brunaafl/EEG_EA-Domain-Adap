@@ -16,7 +16,7 @@ from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
-from evaluation import shared_model, online_shared
+from evaluation import online_shared
 from util import parse_args, set_determinism, set_run_dir
 from paradigm import MotorImagery_, LeftRightImagery_
 
@@ -91,18 +91,29 @@ def main(args):
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':
-        pipes["EEGNetv4_EA"] = pipe_with_align
-        run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-alignment' \
-              '-exp_1-0-both'
+        pipes[f"{config.model.type}_EA"] = pipe_with_align
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "Deep4Net":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     else:
-        pipes["EEGNetv4_Without_EA"] = pipe
-        run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-no' \
-              '-alignment-exp_1-0-both'
-
+        pipes[f"{config.model.type}_Without_EA"] = pipe
+        if config.model.type == "EEGNetv4":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-BNCI2014001-no' \
+                  '-alignment-exp_1-0-both'
+        elif config.model.type == "ShallowFBCSPNet":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
+        elif config.model.type == "Deep4Net":
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-BNCI2014001-alignment' \
+                  '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results_ft = online_shared(dataset, paradigm, pipes, model, run, config)
-
-    results = pd.concat([results_, results_ft])
+    results = online_shared(dataset, paradigm, pipes, model, run, config)
 
     print(results.head())
 
