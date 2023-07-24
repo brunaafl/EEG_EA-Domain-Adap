@@ -775,7 +775,7 @@ def create_clf_ft(model, config):
     lr = config.ft.lr
     patience = config.ft.patience
 
-    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
+    #lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
     ftclf = EEGClassifier(
         model,
@@ -787,7 +787,7 @@ def create_clf_ft(model, config):
         batch_size=batch_size,
         max_epochs=config.ft.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-                   lrscheduler,
+                   #lrscheduler,
                    EpochScoring(scoring='accuracy', on_train=True,
                                 name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False,
