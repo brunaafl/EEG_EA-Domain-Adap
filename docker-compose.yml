@@ -5,7 +5,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: no-EA-no-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_hybrid --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
@@ -20,7 +20,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: yes-EA-no-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_hybrid --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
@@ -35,7 +35,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: no-EA-yes-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_hybrid --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
@@ -50,7 +50,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: yes-EA-yes-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze freeze --num_exp exp_hybrid --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
@@ -65,7 +65,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: debug-yes-EA-yes-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze freeze --num_exp exp_hybrid --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
@@ -80,7 +80,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: test
-    command: "python src/Bruna/domain_adapt_shared_exp.py --config_file config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001"
+    command: "python src/Bruna/domain_adapt_shared_exp.py --config_file config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset ${DATASET}"
     deploy:
       resources:
         reservations:

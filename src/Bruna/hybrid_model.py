@@ -11,7 +11,7 @@ from skorch.utils import to_tensor
 import numpy as np
 import pandas as pd
 
-from braindecode.models import EEGNetv4
+from braindecode.models import EEGNetv4, Deep4Net
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseDataset, BaseConcatDataset
 from braindecode.preprocessing import create_fixed_length_windows
@@ -47,6 +47,22 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 
 from dataset import split_runs_EA
 
+def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
+
+	temp_model = Deep4Net(
+		n_chans,
+		n_classes,
+		input_window_samples=input_window_samples,
+		final_conv_length=config.model.final_conv_length,
+		drop_prob=config.model.drop_prob
+	)
+
+	if remove_bn:
+		for i, module in enumerate(temp_model):
+			if isinstance(temp_model[i], nn.BatchNorm2d):
+				temp_model[i] = nn.Identity()
+
+	return nn.Sequential(*(list(temp_model.children())[start:end]))
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
 
@@ -145,6 +161,7 @@ class HybridScoring(EpochScoring):
 		self.y_trues_ = []
 		for subject_i in range(net.module.num_models):
 			self.y_preds_.append([])
+		self.tag = False
 
 	def on_batch_end(
 			self, net, batch, y_pred, training, **kwargs):
@@ -155,6 +172,7 @@ class HybridScoring(EpochScoring):
 		self.y_trues_.append(y)
 		for subject_i in range(net.module.num_models):
 			self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
+		self.tag = True
 
 	def on_epoch_end(
 			self,
@@ -214,7 +232,7 @@ def define_hybrid_clf(model, config):
 
 	lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
-	scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i}_valid_acc', lower_is_better=False) for i in range(model.num_models)]
+	scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc', lower_is_better=False) for i in range(model.num_models)]
 
 	clf = HybridClassifier(
 		model,
@@ -255,10 +273,13 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 		for index, trial in enumerate(X):
 			subjects[self.groups[index]].append((trial, self.labels[index]))
 
-		assert len(np.unique([len(subjects[i]) for i in subjects])) == 1
+		#assert len(np.unique([len(subjects[i]) for i in subjects])) == 1
+
+		sizes = [len(subjects[i]) for i in subjects]
+		#pdb.set_trace()
 
 		n_subjects = len(subjects)
-		n_trials_per_subject = len(subjects[list(subjects.keys())[0]])
+		n_trials_per_subject = min(np.unique([len(subjects[i]) for i in subjects])) #len(subjects[list(subjects.keys())[0]])
 		ch_names = [self.info["ch_names"][i] + f"_s{k}" for i in range(len(self.info["ch_names"])) for k in subjects.keys()]
 
 		new_trials = []

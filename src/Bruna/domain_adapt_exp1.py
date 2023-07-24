@@ -62,6 +62,7 @@ def main(args):
 
     paradigm = MotorImagery(events=events, n_classes=len(events))
 
+
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
     elif args.dataset == 'Cho2017':
@@ -83,7 +84,9 @@ def main(args):
     input_window_samples = X.shape[2]
     rpc = len(meta['session'].unique())*len(meta['run'].unique())
 
-    model = HybridModel(8, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze)
+    num_subjects = len(dataset.subject_list)
+
+    model = HybridModel(num_subjects - 1, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze)
     # Send model to GPU
     if cuda:
         model.cuda()
@@ -98,8 +101,8 @@ def main(args):
 
     runs = meta.run.values
     sessions = meta.session.values
-    one_session = sessions == "session_T"
-    one_run = runs == 'run_0'
+    one_session = sessions == np.unique(sessions)[0]
+    one_run = runs == np.unique(runs)[0]
     run_session = np.logical_and(one_session, one_run)
     len_run = sum(run_session * 1)
 
