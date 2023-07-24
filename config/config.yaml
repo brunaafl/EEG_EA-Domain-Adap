@@ -4,19 +4,19 @@ train:
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
     patience: 250
-    weight_decay: 0
+    weight_decay: 1e-5
     batch_size: 64
     lr: 0.000625
     valid_split: 0.2
-    experiment_name: 'shared_m1_wd0'
+    experiment_name: 'shared_m1_final'
 ft:
     n_epochs: 600
-    weight_decay: 0
+    weight_decay: 1e-5
     patience: 250
-    lr: 0.000625
+    lr: 0.000225
 model:
     type: 'EEGNetv4'
-    drop_prob: 0.3
+    drop_prob: 0.25
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'
