@@ -258,6 +258,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 		self.kw_args = kw_args
 		self.use_EA = EA_len_run != None
 		self.EA_len_run = EA_len_run
+		self.n_trials_used = 0
 
 	def fit(self, X, y=None, subject_groups=None, info=None, labels=None):
 		self.labels = labels
@@ -266,12 +267,16 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 		return self
 
 	def transform(self, X, y=None):
+		initial_time = time()
 		if self.use_EA:
 			X = split_runs_EA(X.get_data(), self.EA_len_run)
 		subjects = {i:[] for i in np.unique(self.groups)}
+		print(f"(1) EA {(time() - initial_time) * 1000}ms")
 
 		for index, trial in enumerate(X):
 			subjects[self.groups[index]].append((trial, self.labels[index]))
+
+		print(f"(2) Split {(time() - initial_time) * 1000}ms")
 
 		#assert len(np.unique([len(subjects[i]) for i in subjects])) == 1
 
@@ -280,7 +285,10 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
 		n_subjects = len(subjects)
 		n_trials_per_subject = min(np.unique([len(subjects[i]) for i in subjects])) #len(subjects[list(subjects.keys())[0]])
+		self.n_trials_used = n_trials_per_subject
 		ch_names = [self.info["ch_names"][i] + f"_s{k}" for i in range(len(self.info["ch_names"])) for k in subjects.keys()]
+
+		print(f"(3) Setup {(time() - initial_time) * 1000}ms")
 
 		new_trials = []
 		for trial_i in range(n_trials_per_subject):
@@ -294,6 +302,8 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 			base_dataset = BaseDataset(raw, pd.Series({"target": np.array(target)}), target_name="target")
 			new_trials.append(base_dataset)
 
+		print(f"(4) Process {(time() - initial_time) * 1000}ms")
+
 		dataset = BaseConcatDataset(new_trials)
 		windows_dataset = create_fixed_length_windows(
 			dataset,
@@ -304,7 +314,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 			drop_last_window=False
 		)
 
-
+		print(f"Total {(time() - initial_time)*1000}ms")
 		return windows_dataset
 
 	def __sklearn_is_fitted__(self):
@@ -376,8 +386,9 @@ class HybridEvaluation(BaseEvaluation):
 
 				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
 
-				ix_eval =  test >= (self.len_run*2 + test[0])
+				ix_eval =  test >= (self.len_run*2 + test[0]) and test < (test[0] + clf["Hybrid_adapter"].n_trials_used)
 				#ix_eval = sessions[test] == 'session_E'
+				pdb.set_trace()
 				create_dataset.y = y[test[ix_eval]]
 
 				score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)

@@ -59,13 +59,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  test-valid:
+  profiling:
     profiles: ["debug"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: debug-yes-EA-yes-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze freeze --num_exp exp_hybrid --dataset ${DATASET}"
+    container_name: debug-profile
+    command: "python -m torch.utils.bottleneck src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_hybrid --dataset ${DATASET}"
     deploy:
       resources:
         reservations:
