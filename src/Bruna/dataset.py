@@ -18,7 +18,7 @@ from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from model_validation import split_train_val, split_run, split_size
 from alignment import euclidean_alignment
@@ -152,4 +152,32 @@ def split_runs_EA(X, len_run):
         X_aux.append(run_EA)
     X_EA = np.concatenate(X_aux)
     return X_EA
+
+# O que fazer com o dataset do Schirrmeister? Remover alguns trials para que todos os sujeitos fiquem múltiplos de 24
+
+def delete_trials(X, y, subjects, seed, args):
+
+    subj = np.unique(subjects)
+    train_idx = []
+
+    for s in subj:
+        ix  = subjects == s
+        X_subj = X[ix]
+        y_subj = y[ix]
+
+        lenght = len(y_subj)
+
+        n = args.len_EA
+
+        p = (lenght - n*(lenght//n))/lenght
+
+        if p!=0:
+          sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
+
+          for i, (ix_train, ix_test) in enumerate(sss.split(X_subj,y_subj)):
+              ix_train = ix_train
+
+          train_idx.append(ix_train)
+
+    return train_idx[0]
 
