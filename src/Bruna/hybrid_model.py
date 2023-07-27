@@ -47,7 +47,7 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 
 from dataset import split_runs_EA
 
-def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True):
+def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5, remove_bn=True):
 
 	temp_model = Deep4Net(
 		n_chans,
@@ -346,12 +346,15 @@ class HybridEvaluation(BaseEvaluation):
 				   'n_channels': number of channel,
 				   'pipeline': pipeline name}
 		"""
-		
+		init_time = time()
 		X, y, metadata = self.paradigm.get_data(dataset, return_epochs=self.return_epochs)
+		print(f"(1) Data got {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
 		# encode labels
 		le = LabelEncoder()
 		y = y if self.mne_labels else le.fit_transform(y)
+
+		print(f"(2) Encoded {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
 		# extract metadata
 		groups = metadata.subject.values
@@ -359,6 +362,8 @@ class HybridEvaluation(BaseEvaluation):
 		n_subjects = len(dataset.subject_list)
 
 		scorer = get_scorer(self.paradigm.scoring)
+
+		print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
 		cv = LeaveOneGroupOut()
 		# Progressbar at subject level
@@ -386,9 +391,8 @@ class HybridEvaluation(BaseEvaluation):
 
 				eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
 
-				ix_eval =  test >= (self.len_run*2 + test[0]) and test < (test[0] + clf["Hybrid_adapter"].n_trials_used)
+				ix_eval = np.logical_and(test >= (self.len_run*2 + test[0]), test < (test[0] + model["Hybrid_adapter"].n_trials_used))
 				#ix_eval = sessions[test] == 'session_E'
-				pdb.set_trace()
 				create_dataset.y = y[test[ix_eval]]
 
 				score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
