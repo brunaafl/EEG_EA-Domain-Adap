@@ -321,6 +321,7 @@ def ftdata(runs, sessions, train, aux_test, dataset):
 
     return train_idx
 
+
 def select_run(runs, sessions, test, dataset, session):
     """
     Select the run that is going to be used as auxiliar
@@ -754,9 +755,9 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     X_train = X[train_idx].get_data()
                     y_train = y[train_idx]
 
-                    #train_idx = np.concatenate((train, test[aux_idx]))
-                    #X_train = X[train_idx].get_data()
-                    #y_train = y[train_idx]
+                    # train_idx = np.concatenate((train, test[aux_idx]))
+                    # X_train = X[train_idx].get_data()
+                    # y_train = y[train_idx]
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
@@ -821,7 +822,7 @@ def create_clf_ft(model, config):
     lr = config.ft.lr
     patience = config.ft.patience
 
-    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs-1, eta_min=0)
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs - 1, eta_min=0)
 
     ftclf = EEGClassifier(
         model,
@@ -941,7 +942,9 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
                     X_test = split_runs_EA(X[test[ix]], len_run)
                     y_test = y[test[ix]]
 
-                score = _score(emodel, X_test, y_test, scorer)
+                # score = _score(emodel, X_test, y_test, scorer)
+                y_pr = emodel.predict(X_test)
+                score = accuracy_score(y_test, y_pr)
 
                 res = {
                     "time": duration,
@@ -970,9 +973,11 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
                     Aux_trials = X[test[aux_run]]
                     _, r_op = euclidean_alignment(Aux_trials.get_data())
                     # Use ref matrix to align test data
-                    X_t = np.matmul(r_op, Test.get_data())
-                    # Compute score
-                    score = _score(emodel, X_t, y_t, scorer)
+                    Test = np.matmul(r_op, Test.get_data())
+
+                # Compute score
+                y_pr = emodel.predict(Test)
+                score = accuracy_score(y_t, y_pr)
 
                 res = {
                     "time": duration,
@@ -985,7 +990,7 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
                     "ft": "Without",
                     "n_samples": len(train),
                     "n_channels": nchan,
-                    "exp": f"online_{exp}_{int(len(models) / 2)}"
+                    "exp": f"ensemble_{exp}_{int(len(models) / 2)}"
                 }
 
                 results.append(res)
@@ -1018,384 +1023,117 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
     results = []
     model_list = []
-    # for each train subject
+    # First, load all classifiers
+
+    for s in np.unique(groups):
+        clf = create_clf_ft(model, config)
+        clf.initialize()
+
+        # Initialize with the saved parameters
+        clf.load_params(
+            f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
+            f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
+            f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
+            f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
+        )
+
+        model_list.append(clf)
+
     for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
 
         subject = groups[test[0]]
-
-        for s in np.unique(groups[train]):
-            clf = create_clf_ft(model, config)
-            clf.initialize()
-
-            # Initialize with the saved parameters
-            clf.load_params(
-                f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
-                f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
-                f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
-                f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
-            )
-
-            model_list.append(clf)
 
         clfs = model_list.copy()
         clfs.pop(subject - 1)
         w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(clfs) / 2))
 
-    return results
+        clfs = [clfs[i] for i in idx]
+        w = w.tolist()  # [w[i] for i in idx]
 
+        eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
+                                      voting='soft', fit_base_estimators=False)
 
-def eval_exp2(dataset, paradigm, pipes):
-    """
+        create_dataset = TransformaParaWindowsDataset()
 
-    Cross subject evaluation with different sizes of training set.
-    For each test subject, at each assay, we have chosen a percentage a=k/n for each test subject j,
-    where n is the total number of runs per subject of the dataset and k=1,…, n, from the total number
-    of train data using all N-1 subjects.
+        X_train = X[train]
+        y_train = y[train]
 
-    :param dataset : moabb.datasets
-    :param paradigm : moabb.paradigms
-    :param pipes : Pipeline
-    :return: results : df
+        if ea is not None:
+            len_run = ea
+            X_train = split_runs_EA(X_train.get_data(), len_run)
+            create_dataset = TransformaParaWindowsDataset()
 
-    """
+        eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset),
+                              ("Ensemble", clone(eclf))])
 
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
-    # extract metadata
-    groups = metadata.subject.values
-    sessions = metadata.session.values
-    runs = metadata.run.values
-    n_subjects = len(dataset.subject_list)
+        t_start = time()
+        emodel = eclf_pipe.fit(X_train, y_train)
+        duration = time() - t_start
 
-    scorer = get_scorer(paradigm.scoring)
+        for session in np.unique(sessions):
 
-    # encode labels
-    le = LabelEncoder()
-    y = le.fit_transform(y)
-    # evaluation
-    cv = LeaveOneGroupOut()
+            # Firstly, offline
+            ix = sessions[test] == session
 
-    nchan = (
-        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-    )
-
-    results = list()
-    # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CSTrainSize"):
-
-        subject = groups[test[0]]
-
-        # iterate over each pipeline
-        for name, clf in pipes.items():
-
-            train_idx = runs[train] == 'run_0'
-            runs_list = np.unique(runs[train])
-            runs_idx = list(range(len(runs_list)))
-
-            # MAYBE it could be interesting to sort the runs instead of use the order
-            for r in runs_idx:
-                tr = runs[train] == f"run_{r}"
-                train_idx = np.logical_or(train_idx, tr)
-
-                t_start = time()
-                model = deepcopy(clf).fit(X[train[train_idx]], y[train[train_idx]])
-                duration = time() - t_start
-
-                session = 'both'
-
-                # I don't think we need to divide in sessions
-                # ix = sessions[test] == session
-                score = _score(model, X[test], y[test], scorer)
-
-                res = {
-                    "time": duration,
-                    "dataset": dataset.code,
-                    "subject": subject,
-                    "n_train_runs": r + 1,
-                    "session": session,
-                    "score": score,
-                    "n_samples": len(train[train_idx]),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
-                results.append(res)
-
-    results = pd.DataFrame(results)
-
-    return results
-
-
-def eval_exp4(dataset, paradigm, pipes, run_dir):
-    """
-
-    Create one model per subject and the with the others
-
-    :param run_dir:
-    :param dataset : moabb.datasets
-    :param paradigm : moabb.paradigms
-    :param pipes : Pipeline
-    :return: results : df
-             model_list: list of clf
-
-    """
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
-    # extract metadata
-    groups = metadata.subject.values
-    sessions = metadata.session.values
-    n_subjects = len(dataset.subject_list)
-
-    scorer = get_scorer(paradigm.scoring)
-
-    # encode labels
-    le = LabelEncoder()
-    y = le.fit_transform(y)
-    # evaluation
-    cv = LeaveOneGroupOut()
-
-    results = []
-    model_list = []
-    # for each test subject
-    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
-
-        subject = groups[test[0]]
-
-        # iterate over each pipeline
-        for name, clf in pipes.items():
-
-            cvclf = deepcopy(clf)
-            t_start = time()
-            model = cvclf.fit(X[train], y[train])
-            duration = time() - t_start
-            model_list.append(model)
-
-            cvclf['Net'].save_params(
-                f_params=str(run_dir / f"final_model_params_{subject}_exp4.pkl"),
-                f_history=str(run_dir / f"final_model_history_{subject}_exp4.json"),
-                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp4.pkl"),
-                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp4.pkl"),
-            )
-
-            nchan = (
-                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-            )
-
-            # for each test subject
-            for subj in np.unique(groups[test]):
-                # Now evaluate
-                ix = groups[test] == subj
-                score = _score(model, X[test[ix]], y[test[ix]], scorer)
-                session = 'both'
-
-                res = {
-                    "time": duration,
-                    "dataset": dataset.code,
-                    "subject": groups[train[0]],
-                    "test": subj,
-                    "session": session,
-                    "score": score,
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                    "exp": "individual"
-                }
-
-                results.append(res)
-
-    results = pd.DataFrame(results)
-
-    return results, model_list
-
-
-def eval_exp3(dataset, paradigm, pipes, run_dir, nn_model, use_ses='both', online=False):
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
-
-    groups = metadata.subject.values
-    sessions = metadata.session.values
-    runs = metadata.run.values
-    n_subjects = len(dataset.subject_list)
-
-    scorer = get_scorer(paradigm.scoring)
-
-    # encode labels
-    le = LabelEncoder()
-    y = le.fit_transform(y)
-    # evaluation
-    cv = LeaveOneGroupOut()
-
-    results = []
-    # for each test subject
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject"):
-
-        subject = int(groups[test[0]])
-
-        for name, clf in pipes.items():
-
-            if use_ses in np.unique(sessions):
-                ses = sessions[train] == use_ses
-                t_idx = train[ses]
-                X_t = X[t_idx]
-                y_t = y[t_idx]
-            else:
-                t_idx = train
-                X_t = X[t_idx]
-                y_t = y[t_idx]
-
-            len_train = len(y_t)
-            # Create the new model and initialize it
-            cvclf = deepcopy(clf)
-            # fit
-            t_start = time()
-            model = cvclf.fit(X_t, y_t)
-            duration = time() - t_start
-
-            # Save params
-            cvclf['Net'].save_params(
-                f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
-                f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
-                f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
-                f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"),
-            )
-
-            # Define test set
-            ix = sessions[test] == 'session_E'
             X_test = X[test[ix]]
             y_test = y[test[ix]]
 
-            # Number of channels
-            nchan = (
-                X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-            )
+            if ea is not None:
+                len_run = ea
+                X_test = split_runs_EA(X_test.get_data(), len_run)
 
-            # Predict on the test data if offline
-            # If online and EA, you have no data to align the test here
-            if online:
-                ftclf = create_clf_ft(nn_model, 0)
-                ftclf.initialize()
+            y_pr = emodel.predict(X_test)
+            score = accuracy_score(y_test, y_pr)
 
-                # Initialize with the saved parameters
-                ftclf.load_params(
-                    f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
-                    f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
-                    f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
-                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"), )
-
-                ftmodel = ftclf.fit(X_t, y_t)
-                # First without EA
-                score = _score(ftmodel, X_test.get_data(), y_test, scorer)
-
-            else:
-                # First, using 0 runs
-                score = _score(model, X_test, y_test, scorer)
-
-            # Add the score to the dataframe
             res = {
-                "subject": groups[test[0]],
-                "n_test_runs": 0,
-                "test_session": 'session_E',
-                "score": score,
                 "time": duration,
-                "n_samples": len_train,
-                "n_channels": nchan,
                 "dataset": dataset.code,
-                "pipeline": name,
+                "subject": idx,
+                "test": subject,
+                "session": session,
+                "score": score,
+                "type": "Offline",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "exp": f"ensemble_{exp}_{int(len(models) / 2)}"
             }
+
             results.append(res)
 
-            # Prepare for fine-tuning
-            tftr0 = runs[test] == 'run_0'
-            tfts = sessions[test] == 'session_T'
-            test_ft_idx = np.logical_and(tftr0, tfts)
+            # Simulated online
 
-            len_run = sum(test_ft_idx * 1)
+            # Select auxiliar trials
+            test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
 
-            X_test = X_test.get_data()
+            Test = X[test[test_runs]]
+            y_t = y[test[test_runs]]
 
-            # now, add the runs in the train set
-            for k in range(len(np.unique(runs))):
+            if ea is not None:
+                # Then, test with one run for ft
+                Aux_trials = X[test[aux_run]]
+                _, r_op = euclidean_alignment(Aux_trials.get_data())
+                # Use ref matrix to align test data
+                Test = np.matmul(r_op, Test.get_data())
 
-                X_test_ = X_test
+            # Compute score
+            y_pr = emodel.predict(Test)
+            score = accuracy_score(y_t, y_pr)
 
-                # runs to put in the training
-                tftr = runs[test] == f"run_{k}"
-                # find the session_T part of the run
-                inter = np.logical_and(tfts, tftr)
-                # find the union between the previous fine-tuning test
-                test_ft_idx = np.logical_or(test_ft_idx, inter)
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "subject": idx,
+                "test": subject,
+                "session": session,
+                "score": score,
+                "type": "Online",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "exp": f"online_{exp}_{int(len(models) / 2)}"
+            }
 
-                # Compute train data
-                train_idx = np.concatenate((t_idx, test[test_ft_idx]))
-                X_train = X[train_idx].get_data()
-                y_train = y[train_idx]
+            results.append(res)
 
-                # Create a new model initialized with the saved params
-                ftclf = create_clf_ft(nn_model, 100)
-
-                ftclf.initialize()
-
-                # Initialize with the saved parameters
-                ftclf.load_params(
-                    f_params=str(run_dir / f"final_model_params_{subject}_exp3.pkl"),
-                    f_history=str(run_dir / f"final_model_history_{subject}_exp3.json"),
-                    f_criterion=str(run_dir / f"final_model_criterion_{subject}_exp3.pkl"),
-                    f_optimizer=str(run_dir / f"final_model_optimizer_{subject}_exp3.pkl"), )
-
-                # Freeze some layers
-                ftclf.module_.conv_temporal.weight.requires_grad = False
-                ftclf.module_.bnorm_temporal.weight.requires_grad = False
-                ftclf.module_.conv_spatial.weight.requires_grad = False
-                ftclf.module_.bnorm_1.weight.requires_grad = False
-                ftclf.module_.conv_separable_depth.weight.requires_grad = False
-                ftclf.module_.conv_separable_point.weight.requires_grad = False
-                ftclf.module_.bnorm_2.weight.requires_grad = False
-
-                # Euclidean Alignment if needed
-                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
-                    if online:
-                        # Align train subjects
-                        X_train[:len_train] = split_runs_EA(X_train[:len_train], len_run)
-                        # Align all aux data (fine-tuning data)
-                        X_train[len_train:], r_op = euclidean_alignment(X_train[len_train:])
-                        # Use ref matrix to align test data
-                        X_test_ = np.matmul(r_op, X_test)
-
-                    else:
-                        # Align normally train and test
-                        X_train = split_runs_EA(X_train, len_run)
-                        X_test_ = split_runs_EA(X_test, len_run)
-
-                # Fit
-                t_start = time()
-                ftmodel = ftclf.fit(X_train, y_train)
-                duration = time() - t_start
-
-                # Predict on the test set
-                score = _score(ftmodel, X_test_, y_test, scorer)
-
-                res = {
-                    "subject": groups[test[0]],
-                    "n_test_runs": k + 1,
-                    "test_session": 'session_E',
-                    "score": score,
-                    "time": duration,
-                    "n_samples": len(y_train),
-                    "n_channels": nchan,
-                    "dataset": dataset.code,
-                    "pipeline": name,
-                }
-                results.append(res)
-
-    results = pd.DataFrame(results)
-    return results
-
-
-def add_test_column(dataset, results):
-    subj_list = dataset.subject_list
-    list_ = []
-    for i in subj_list:
-        subj_copy = deepcopy(subj_list)
-        subj_copy.remove(i)
-        list_.append(subj_copy)
-
-    array = np.array(list_)
-    test = array.flatten()
-    results.insert(4, 'test', test, True)
     return results
