@@ -25,7 +25,7 @@ from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaPa
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 
-from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet
+from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet, gen_slice_ShallowNet
 
 
 import torchinfo
@@ -99,14 +99,18 @@ def main(args):
 
     num_subjects = len(dataset.subject_list)
 
-    #testmodel = gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, drop_prob=config.model.drop_prob)
-    #pdb.set_trace()
+    testmodel = gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, drop_prob=config.model.drop_prob)
+    pdb.set_trace()
 
-    model = HybridModel(num_subjects - 1, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze)
+    model = HybridModel(num_subjects - 1, config.train.model_arch, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze)
     # Send model to GPU
     if cuda:
         model.cuda()
 
+    torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
+    torchinfo.summary(model.unique_modules[0], input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
+    #print((config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
+    #pdb.set_trace()
 
     # Create Classifier
     clf = define_hybrid_clf(model, config)

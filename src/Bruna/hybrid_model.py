@@ -11,7 +11,7 @@ from skorch.utils import to_tensor
 import numpy as np
 import pandas as pd
 
-from braindecode.models import EEGNetv4, Deep4Net
+from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseDataset, BaseConcatDataset
 from braindecode.preprocessing import create_fixed_length_windows
@@ -81,21 +81,48 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 
 	return nn.Sequential(*(list(temp_model.children())[start:end]))
 
+def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5, remove_bn=True):
+
+	temp_model = ShallowFBCSPNet(
+		n_chans,
+		n_classes,
+		input_window_samples=input_window_samples,
+		final_conv_length=config.model.final_conv_length,
+		drop_prob=config.model.drop_prob
+	)
+
+	if remove_bn:
+		for i, module in enumerate(temp_model):
+			if isinstance(temp_model[i], nn.BatchNorm2d):
+				temp_model[i] = nn.Identity()
+
+	return nn.Sequential(*(list(temp_model.children())[start:end]))
+
+
+model_gen = {
+	"DeepNet": [gen_slice_DeepNet, 8, 9],
+	"EEGNet": [gen_slice_EEGNet, 5, 7],
+	"ShallowNet": [gen_slice_ShallowNet, 3, 3],
+	"EEGNetShared": [gen_slice_EEGNet, 0, 19],
+}
+
+
 class HybridModel(nn.Module):
-	def __init__(self, num_models, n_chans, n_classes, input_window_samples, config=None, freeze=None):
+	def __init__(self, num_models, model_type, n_chans, n_classes, input_window_samples, config=None, freeze=None):
 		super(HybridModel, self).__init__()
 		self._args = (n_chans, n_classes, input_window_samples)
 		self.config = config
 		self.num_models = num_models
-		self.shared_modules = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=6)
+		self.model_type = model_type
+		self.shared_modules = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, config, start=model_gen[self.model_type][2])
 		self.unique_modules = nn.ModuleList()
 		self.freeze = freeze == "freeze"
+		self.norm = nn.ELU() #LayerNorm(22, elementwise_affine=False)
 		for model in range(num_models):
 			self.unique_modules.append(self.init_unique_modules(*self._args))
 
 	def init_unique_modules(self, n_chans, n_classes, input_window_samples):
-		unique_head = gen_slice_EEGNet(n_chans, n_classes, input_window_samples, self.config, end=5, remove_bn=False)
-		# , nn.LayerNorm((16, 1, 1126), elementwise_affine=False)
+		unique_head = nn.Sequential(model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config, end=model_gen[self.model_type][1], remove_bn=False), nn.LazyBatchNorm2d())
 		return unique_head
 
 	def split_input(self, X):
@@ -106,8 +133,9 @@ class HybridModel(nn.Module):
 		out = []
 		for i, model_input in enumerate(inputs):
 			temp_unique = self.unique_modules[i](model_input)
-			temp_shared = self.shared_modules(temp_unique)
 			#pdb.set_trace()
+			temp_unique = self.norm(temp_unique)
+			temp_shared = self.shared_modules(temp_unique)
 			out.append(temp_shared)
 		result = torch.stack(out)
 		if result.requires_grad:
@@ -120,20 +148,23 @@ class HybridModel(nn.Module):
 	def generate_branch_model(self):
 		new_layers = self.init_unique_modules(*self._args)
 		cloned_layers = copy.deepcopy(self.shared_modules)
+		norm_clone = copy.deepcopy(self.norm)
 		if self.freeze:
 			cloned_layers.requires_grad_(False)
-		return SpecializedModel(new_layers, cloned_layers)
+		return SpecializedModel(new_layers, norm_clone, cloned_layers)
 
 
 
 class SpecializedModel(nn.Module):
-	def __init__(self, unique_modules, cloned_modules):
+	def __init__(self, unique_modules, norm_clone, cloned_modules):
 		super(SpecializedModel, self).__init__()
 		self.shared_modules = cloned_modules
+		self.norm = norm_clone
 		self.unique_modules = unique_modules
 
 	def forward(self, x):
 		x = self.unique_modules(x)
+		x = self.norm(x)
 		x = self.shared_modules(x)
 		return x
 
@@ -146,7 +177,8 @@ class HybridClassifier(EEGClassifier):
 			subject_slice = torch.select(y_pred, 0, subject)
 			if y_pred.requires_grad:
 				subject_slice.retain_grad()
-			losses.append(self.criterion_(subject_slice, y_true[:, subject]))
+			loss = self.criterion_(subject_slice, y_true[:, subject])
+			losses.append(loss)
 
 		loss = sum(losses) / self.module.num_models
 
@@ -201,6 +233,16 @@ def get_subject_acc_scorer(subject):
 		return accuracy_score(true_slice, predictions)
 	return scoring_for_subject_i
 
+def get_subject_loss_scorer(subject, criterion):
+	def scoring_for_subject_i(model, x, y_true):
+		out = model.forward_iter()
+		y_preds = [z for z in out]
+		#subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
+		true_slice = to_tensor(y_true[:, subject], device=model.device)
+		loss = criterion(y_preds[subject], true_slice)
+		return loss
+	return scoring_for_subject_i
+
 def average_acc_scoring(model, x, y_true):
 	out = model.forward_iter()
 	y_preds = [z for z in out]
@@ -233,6 +275,10 @@ def define_hybrid_clf(model, config):
 	lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs, eta_min=0)
 
 	scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc', lower_is_better=False) for i in range(model.num_models)]
+
+	#scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=True, name=f'{i:02d}_train_acc', lower_is_better=False) for i in range(model.num_models)]
+
+	#scoring_callbacks = [HybridScoring(scoring=get_subject_loss_scorer(i, torch.nn.NLLLoss()), on_train=False, name=f'{i:02d}_valid_loss', lower_is_better=False) for i in range(model.num_models)]
 
 	clf = HybridClassifier(
 		model,
