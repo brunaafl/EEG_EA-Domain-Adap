@@ -22,16 +22,25 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
         if y is None:
             y = self.y
 
-        dataset = create_from_X_y(
-            X=X.get_data(),
-            y=y,
-            window_size_samples=X.get_data().shape[2],
-            window_stride_samples=X.get_data().shape[2],
-            drop_last_window=False,
-            sfreq=X.info["sfreq"],
-        )
+        if isinstance(X, np.ndarray):
 
-        # dataset_EA = preprocess(dataset,[Preprocessor(euclidean_alignment,apply_on_array=True)])
+            dataset = create_from_X_y(
+                X=X,
+                y=y,
+                window_size_samples=X.shape[2],
+                window_stride_samples=X.shape[2],
+                drop_last_window=False,
+                sfreq=250.0, )  # X.info["sfreq"]
+
+        else:
+            dataset = create_from_X_y(
+                X=X.get_data(),
+                y=self.y,
+                window_size_samples=X.get_data().shape[2],
+                window_stride_samples=X.get_data().shape[2],
+                drop_last_window=False,
+                sfreq=X.info["sfreq"],
+            )
 
         return dataset
 
@@ -50,19 +59,34 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        X_EA = split_runs_EA(X.get_data(), self.len_run)
 
         if y is None:
             y = self.y
 
-        dataset = create_from_X_y(
-            X=X_EA,
-            y=y,
-            window_size_samples=X.get_data().shape[2],
-            window_stride_samples=X.get_data().shape[2],
-            drop_last_window=False,
-            sfreq=X.info["sfreq"],
-        )
+        if isinstance(X, np.ndarray):
+
+            X_EA = split_runs_EA(X, self.len_run)
+
+            dataset = create_from_X_y(
+                X=X_EA,
+                y=y,
+                window_size_samples=X.shape[2],
+                window_stride_samples=X.shape[2],
+                drop_last_window=False,
+                sfreq=250.0, )  # X.info["sfreq"]
+
+        else:
+
+            X_EA = split_runs_EA(X.get_data(), self.len_run)
+
+            dataset = create_from_X_y(
+                X=X_EA,
+                y=self.y,
+                window_size_samples=X.get_data().shape[2],
+                window_stride_samples=X.get_data().shape[2],
+                drop_last_window=False,
+                sfreq=X.info["sfreq"],
+            )
 
         return dataset
 
