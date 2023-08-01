@@ -28,6 +28,7 @@ from skorch.dataset import ValidSplit
 from pipeline import TransformaParaWindowsDatasetEA
 from dataset import split_runs_EA
 from alignment import euclidean_alignment
+from train import define_clf
 
 mne.set_log_level(False)
 log = logging.getLogger(__name__)
@@ -1026,7 +1027,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
     # First, load all classifiers
 
     for s in np.unique(groups):
-        clf = create_clf_ft(model, config)
+        clf = create_clf(deepcopy(model), config)
         clf.initialize()
 
         # Initialize with the saved parameters
@@ -1037,9 +1038,14 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
         )
 
-        model_list.append(clf)
+        create_dataset = TransformaParaWindowsDataset()
 
-    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-IndividualModels"):
+        clf_pipe = Pipeline([("Braindecode_dataset", create_dataset),
+                              ("Ensemble", clone(clf))])
+
+        model_list.append(clf_pipe)
+
+    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
 
         subject = groups[test[0]]
 
@@ -1053,21 +1059,15 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
                                       voting='soft', fit_base_estimators=False)
 
-        create_dataset = TransformaParaWindowsDataset()
-
-        X_train = X[train]
+        X_train = X[train].get_data()
         y_train = y[train]
 
         if ea is not None:
             len_run = ea
-            X_train = split_runs_EA(X_train.get_data(), len_run)
-            create_dataset = TransformaParaWindowsDataset()
-
-        eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset),
-                              ("Ensemble", clone(eclf))])
+            X_train = split_runs_EA(X_train, len_run)
 
         t_start = time()
-        emodel = eclf_pipe.fit(X_train, y_train)
+        emodel = eclf.fit(X_train, y_train)
         duration = time() - t_start
 
         for session in np.unique(sessions):
@@ -1075,12 +1075,12 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             # Firstly, offline
             ix = sessions[test] == session
 
-            X_test = X[test[ix]]
+            X_test = X[test[ix]].get_data()
             y_test = y[test[ix]]
 
             if ea is not None:
                 len_run = ea
-                X_test = split_runs_EA(X_test.get_data(), len_run)
+                X_test = split_runs_EA(X_test, len_run)
 
             y_pr = emodel.predict(X_test)
             score = accuracy_score(y_test, y_pr)
@@ -1106,7 +1106,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             # Select auxiliar trials
             test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
 
-            Test = X[test[test_runs]]
+            Test = X[test[test_runs]].get_data()
             y_t = y[test[test_runs]]
 
             if ea is not None:
@@ -1114,7 +1114,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 Aux_trials = X[test[aux_run]]
                 _, r_op = euclidean_alignment(Aux_trials.get_data())
                 # Use ref matrix to align test data
-                Test = np.matmul(r_op, Test.get_data())
+                Test = np.matmul(r_op, Test)
 
             # Compute score
             y_pr = emodel.predict(Test)
