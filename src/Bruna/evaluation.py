@@ -819,7 +819,7 @@ def create_clf_ft(model, config):
         torch.backends.cudnn.benchmark = True
 
     weight_decay = config.ft.weight_decay
-    batch_size = config.train.batch_size
+    batch_size = config.ft.batch_size
     lr = config.ft.lr
     patience = config.ft.patience
 
