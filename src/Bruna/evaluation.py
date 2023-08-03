@@ -1038,12 +1038,11 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
         )
 
-        create_dataset = TransformaParaWindowsDataset()
+        #create_dataset = TransformaParaWindowsDataset()
 
-        clf_pipe = Pipeline([("Braindecode_dataset", create_dataset),
-                              ("Ensemble", clone(clf))])
+        #clf_pipe = Pipeline([("Braindecode_dataset", create_dataset),("Ensemble", clf)])
 
-        model_list.append(clf_pipe)
+        model_list.append(clf)
 
     for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
 
@@ -1056,8 +1055,12 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         clfs = [clfs[i] for i in idx]
         w = w.tolist()  # [w[i] for i in idx]
 
+        create_dataset = TransformaParaWindowsDataset()
+
         eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
                                       voting='soft', fit_base_estimators=False)
+
+        eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
 
         X_train = X[train].get_data()
         y_train = y[train]
@@ -1067,7 +1070,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             X_train = split_runs_EA(X_train, len_run)
 
         t_start = time()
-        emodel = eclf.fit(X_train, y_train)
+        emodel = eclf_pipe.fit(X_train, y_train)
         duration = time() - t_start
 
         for session in np.unique(sessions):
