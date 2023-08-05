@@ -1,5 +1,7 @@
 from braindecode.datasets import create_from_X_y
 
+import numpy as np
+
 from numpy import unique
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
