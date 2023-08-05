@@ -11,7 +11,7 @@ train:
     experiment_name: 'indiv_m1_final'
 ft:
     n_epochs: 600
-    lr: 0.0000825
+    lr: 0.0000625
     patience: 150
     batch_size: 16
     weight_decay: 1e-5
