@@ -12,10 +12,11 @@ from copy import deepcopy
 from time import time
 
 from mne.epochs import BaseEpochs
-from sklearn.metrics import get_scorer
+from sklearn.metrics import get_scorer, accuracy_score
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import Pipeline
 
 from mlxtend.classifier import EnsembleVoteClassifier
 
@@ -25,7 +26,7 @@ from braindecode import EEGClassifier
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
 
-from pipeline import TransformaParaWindowsDatasetEA
+from pipeline import TransformaParaWindowsDatasetEA, TransformaParaWindowsDataset
 from dataset import split_runs_EA
 from alignment import euclidean_alignment
 from train import define_clf
@@ -1027,7 +1028,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
     # First, load all classifiers
 
     for s in np.unique(groups):
-        clf = create_clf(deepcopy(model), config)
+        clf = define_clf(deepcopy(model), config)
         clf.initialize()
 
         # Initialize with the saved parameters
@@ -1037,10 +1038,6 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
             f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
         )
-
-        #create_dataset = TransformaParaWindowsDataset()
-
-        #clf_pipe = Pipeline([("Braindecode_dataset", create_dataset),("Ensemble", clf)])
 
         model_list.append(clf)
 
@@ -1058,7 +1055,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         create_dataset = TransformaParaWindowsDataset()
 
         eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
-                                      voting='soft', fit_base_estimators=False)
+                                      voting=config.ensemble.voting, fit_base_estimators=False)
 
         eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
 
@@ -1099,7 +1096,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 "ft": "Without",
                 "n_samples": len(train),
                 "n_channels": nchan,
-                "exp": f"ensemble_{exp}_{int(len(models) / 2)}"
+                "exp": f"ensemble_{int(len(clfs) / 2)}"
             }
 
             results.append(res)
@@ -1134,7 +1131,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 "ft": "Without",
                 "n_samples": len(train),
                 "n_channels": nchan,
-                "exp": f"online_{exp}_{int(len(models) / 2)}"
+                "exp": f"online_{int(len(clfs) / 2)}"
             }
 
             results.append(res)
