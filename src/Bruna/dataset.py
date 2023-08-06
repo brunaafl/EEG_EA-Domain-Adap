@@ -153,31 +153,30 @@ def split_runs_EA(X, len_run):
     X_EA = np.concatenate(X_aux)
     return X_EA
 
+
 # O que fazer com o dataset do Schirrmeister? Remover alguns trials para que todos os sujeitos fiquem múltiplos de 24
 
 def delete_trials(X, y, subjects, seed, args):
-
     subj = np.unique(subjects)
     train_idx = []
 
     for s in subj:
-        ix  = subjects == s
+        ix = subjects == s
         X_subj = X[ix]
         y_subj = y[ix]
 
-        lenght = len(y_subj)
+        length = len(y_subj)
 
         n = args.len_EA
 
-        p = (lenght - n*(lenght//n))/lenght
+        p = (length - n * (length // n)) / length
 
-        if p!=0:
-          sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
+        if p != 0:
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
 
-          for i, (ix_train, ix_test) in enumerate(sss.split(X_subj,y_subj)):
-              ix_train = ix_train
+            for i, (ix_train, ix_test) in enumerate(sss.split(X_subj, y_subj)):
+                ix_train = ix_train
 
-          train_idx.append(ix_train)
+            train_idx.append(ix_train)
 
     return train_idx[0]
-
