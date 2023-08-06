@@ -5,20 +5,19 @@ Baseline script to analyse the EEG Dataset.
 
 import torch
 import numpy as np
-import pandas as pd
 
 from omegaconf import OmegaConf
 
 from sklearn.pipeline import Pipeline
+from sklearn.base import clone
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from evaluation import individual_models, online_indiv
+from evaluation import ensemble_simple_load
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
-from sklearn.base import clone
 from paradigm import MotorImagery_, LeftRightImagery_
 
 """
@@ -80,38 +79,26 @@ def main(args):
     if cuda:
         model.cuda()
 
-    # Create Classifier
-    clf = define_clf(model, config)
-
-    # Create pipeline
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
-    create_dataset = TransformaParaWindowsDataset()
-
-    pipes = {}
-
-    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
-                                ("Net", clone(clf))])
-    pipe = Pipeline([("Braindecode_dataset", create_dataset),
-                     ("Net", clone(clf))])
-
+    # Define dir where parameters were saved
     if args.ea == 'alignment':
-        pipes[f"{config.model.type}_EA"] = pipe_with_align
+        ea = len_run
         if config.model.type == "EEGNetv4":
             run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m1_final-BNCI2014001-alignment' \
                   '-exp_1-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m3_final-BNCI2014001-alignment' \
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m2_final-BNCI2014001-alignment' \
                   '-exp_1-0-both'
     else:
-        pipes[f"{config.model.type}_Without_EA"] = pipe
+        ea = None
         if config.model.type == "EEGNetv4":
             run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m1_final-BNCI2014001-no' \
                   '-alignment-exp_1-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m3_final-BNCI2014001-alignment' \
+            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m2_final-BNCI2014001-alignment' \
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results = online_indiv(dataset, paradigm, pipes, model, run, config)
+
+    results = ensemble_simple_load(dataset, paradigm, run, config, model, ea=ea)
 
     print(results.head())
 
