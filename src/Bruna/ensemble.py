@@ -97,7 +97,7 @@ def main(args):
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
 
-    results = ensemble_simple_load(dataset, paradigm, Path(run), config, model, ea=ea)
+    results = ensemble_simple_load(dataset, paradigm, run, config, model, ea=ea)
 
     print(results.head())
 
