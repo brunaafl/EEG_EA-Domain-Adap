@@ -8,8 +8,7 @@ import numpy as np
 
 from omegaconf import OmegaConf
 
-from sklearn.pipeline import Pipeline
-from sklearn.base import clone
+from pathlib import Path
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
@@ -98,7 +97,7 @@ def main(args):
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
 
-    results = ensemble_simple_load(dataset, paradigm, run, config, model, ea=ea)
+    results = ensemble_simple_load(dataset, paradigm, Path(run), config, model, ea=ea)
 
     print(results.head())
 
