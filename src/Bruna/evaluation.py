@@ -1288,5 +1288,5 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             }
 
             results.append(res)
-
+    results = pd.DataFrame(results)
     return results
