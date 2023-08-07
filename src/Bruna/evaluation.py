@@ -1101,7 +1101,6 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             res = {
                 "time": duration,
                 "dataset": dataset.code,
-                "subject": idx,
                 "test": subject,
                 "session": session,
                 "score": score,
@@ -1133,7 +1132,6 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             res = {
                 "time": duration,
                 "dataset": dataset.code,
-                "subject": idx,
                 "test": subject,
                 "session": session,
                 "score": score,
