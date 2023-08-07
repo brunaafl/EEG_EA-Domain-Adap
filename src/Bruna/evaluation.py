@@ -848,15 +848,16 @@ def create_clf_ft(model, config):
     return ftclf
 
 
-def select_weights(X_test, y_test, scorer, models, n=5, exp=True):
+def select_weights(X_test, y_test, models, n=5, exp=True):
     scores = []
     for model in models:
-        score = _score(model, X_test, y_test, scorer)
+        y_pr = model.predict(X_test)
+        score = accuracy_score(y_test, y_pr)
         scores.append(score)
 
     scores = np.array(scores)
     scores_idx = np.argsort(scores)[::-1][:n]
-    w = np.sort(scores)[:n]
+    w = scores[scores_idx]
 
     if exp:
         w = np.exp(w)
@@ -914,7 +915,7 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
             clfs.pop(subject - 1)
             models.pop(subject - 1)
 
-            w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(models) / 2))
+            w, idx = select_weights(X[test].get_data(), y[test], clfs, n=int(len(models) / 2))
             clfs = clfs[idx]
 
             eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
@@ -1047,17 +1048,23 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
         clfs = model_list.copy()
         clfs.pop(subject - 1)
-        w, idx = select_weights(X[test], y[test], scorer, clfs, n=int(len(clfs) / 2))
+
+        X_test = X[test].get_data()
+        y_test = y[test]
+
+        if ea is not None:
+            len_run = ea
+            X_test = split_runs_EA(X_test, len_run)
+
+        w, idx = select_weights(X_test, y_test, clfs, n=int(len(clfs) / 2))
 
         clfs = [clfs[i] for i in idx]
-        w = w.tolist()  # [w[i] for i in idx]
-
-        create_dataset = TransformaParaWindowsDataset()
+        w = w.tolist()
 
         eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
                                       voting=config.ensemble.voting, fit_base_estimators=False)
 
-        eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
+        create_dataset = TransformaParaWindowsDataset()
 
         X_train = X[train].get_data()
         y_train = y[train]
@@ -1065,6 +1072,8 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         if ea is not None:
             len_run = ea
             X_train = split_runs_EA(X_train, len_run)
+
+        eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
 
         t_start = time()
         emodel = eclf_pipe.fit(X_train, y_train)
