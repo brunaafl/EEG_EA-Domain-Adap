@@ -7,12 +7,12 @@ train:
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
-    lr: 0.000925
+    lr: 0.000825
     valid_split: 0.2
     experiment_name: 'indiv_m2_final'
 ft:
     n_epochs: 600
-    lr: 0.0000425
+    lr: 0.0000525
     patience: 150
     batch_size: 16
     weight_decay: 1e-5
