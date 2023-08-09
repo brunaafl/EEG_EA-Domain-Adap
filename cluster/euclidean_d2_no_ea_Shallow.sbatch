@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eeg_shared_d2_m2
+#SBATCH --job-name=eeg_shared_d2_m3
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
