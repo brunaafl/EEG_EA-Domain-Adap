@@ -156,7 +156,7 @@ def split_runs_EA(X, len_run):
 
 # O que fazer com o dataset do Schirrmeister? Remover alguns trials para que todos os sujeitos fiquem múltiplos de 24
 
-def delete_trials(X, y, subjects, seed, args):
+def delete_trials(X, y, subjects, seed, ea):
     subj = np.unique(subjects)
     train_idx = []
 
@@ -167,7 +167,7 @@ def delete_trials(X, y, subjects, seed, args):
 
         length = len(y_subj)
 
-        n = args.len_EA
+        n = ea
 
         p = (length - n * (length // n)) / length
 

@@ -27,7 +27,7 @@ from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
 
 from pipeline import TransformaParaWindowsDatasetEA, TransformaParaWindowsDataset
-from dataset import split_runs_EA
+from dataset import split_runs_EA, delete_trials
 from alignment import euclidean_alignment
 from train import define_clf
 
@@ -145,7 +145,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
-def shared_model(dataset, paradigm, pipes, run_dir):
+def shared_model(dataset, paradigm, pipes, run_dir, config):
     """
 
     Create one model per subject and the with the others
@@ -172,6 +172,16 @@ def shared_model(dataset, paradigm, pipes, run_dir):
     y = le.fit_transform(y)
     # evaluation
     cv = LeaveOneGroupOut()
+
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions[train_idx]
+        runs = runs[train_idx]
 
     results = []
     # for each test subject
@@ -401,6 +411,16 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
         X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
     )
 
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions[train_idx]
+        runs = runs[train_idx]
+
     results = []
     # for each test subject
     for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-SharedModels"):
@@ -515,7 +535,7 @@ def freeze(model, config):
     return model
 
 
-def individual_models(dataset, paradigm, pipes, run_dir):
+def individual_models(dataset, paradigm, pipes, run_dir, config):
     """
 
     Create one model per subject and the with the others
@@ -546,6 +566,16 @@ def individual_models(dataset, paradigm, pipes, run_dir):
     nchan = (
         X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
     )
+
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions[train_idx]
+        runs = runs[train_idx]
 
     results = []
     model_list = []
@@ -709,6 +739,16 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
     nchan = (
         X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
     )
+
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions[train_idx]
+        runs = runs[train_idx]
 
     results = []
     # for each test subject
@@ -1022,6 +1062,16 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
     )
 
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions[train_idx]
+        runs = runs[train_idx]
+
     results = []
     model_list = []
     # First, load all classifiers
@@ -1040,7 +1090,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
         model_list.append(clf)
 
-    for test, train in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
 
         subject = groups[test[0]]
 
