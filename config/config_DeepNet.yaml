@@ -13,7 +13,7 @@ ft:
     n_epochs: 600
     weight_decay: 1e-7
     patience: 150
-    lr: 1e-6
+    lr: 5*1e-6
     batch_size: 64
 model:
     type: 'Deep4Net'
