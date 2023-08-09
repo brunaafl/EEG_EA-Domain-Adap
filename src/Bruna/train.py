@@ -86,12 +86,6 @@ def init_model(n_chans, n_classes, input_window_samples, config):
             in_chans=n_chans,
             n_classes=n_classes,
             input_window_samples=input_window_samples,
-            n_filters_time=10,
-            n_filters_spat=10,
-            stride_before_pool=True,
-            n_filters_2=int(n_chans * 2/4),
-            n_filters_3=int(n_chans * (2 ** 2.0)/4),
-            n_filters_4=int(n_chans * (2 ** 3.0)/4),
             final_conv_length=config.model.final_conv_length,
             drop_prob=config.model.drop_prob
         )
