@@ -47,7 +47,7 @@ def main(args):
                 "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
                 "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events),metric='accuracy', channels=channels, resample=250)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', channels=channels, resample=250)
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -59,11 +59,15 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
+        #paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
+
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
+    n_chans = X.shape[1]
+    input_window_samples = X.shape[2]
 
     ea = config.ea.batch
 
