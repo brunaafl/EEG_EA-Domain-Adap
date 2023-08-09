@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eeg_shared_d2_m3
+#SBATCH --job-name=eeg_shared_d2_m2
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
@@ -13,7 +13,4 @@
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
 python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp1.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_Shallow.yaml  --num_exp 'exp_1' --dataset 'Schirrmeister2017' --ea 'no-alignment'
-
-
- 
 
