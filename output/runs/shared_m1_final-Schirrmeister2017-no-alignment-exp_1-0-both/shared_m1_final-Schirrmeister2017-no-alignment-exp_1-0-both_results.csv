@@ -1,0 +1,9 @@
+,time,dataset,subject,session,score,type,ft,n_samples,n_channels,pipeline,exp
+0,173.88289976119995,Schirrmeister2017,1,session_0,0.514018691588785,Offline,Without,242,22,EEGNetv4_Without_EA,shared
+1,173.88289976119995,Schirrmeister2017,1,session_0,0.514018691588785,Online,Without,242,22,EEGNetv4_Without_EA,zero_shot
+2,173.88289976119995,Schirrmeister2017,1,session_0,0.514018691588785,Online,Without,242,22,EEGNetv4_Without_EA,1run
+3,47.221771001815796,Schirrmeister2017,2,session_0,0.425,Offline,Without,238,22,EEGNetv4_Without_EA,shared
+4,47.221771001815796,Schirrmeister2017,2,session_0,0.425,Online,Without,238,22,EEGNetv4_Without_EA,zero_shot
+5,47.221771001815796,Schirrmeister2017,2,session_0,0.425,Online,Without,238,22,EEGNetv4_Without_EA,1run
+0,41.94341707229614,Schirrmeister2017,1,session_0,0.5607476635514018,Online,With,333,22,EEGNetv4_Without_EA,fine-tuning
+1,38.78349328041077,Schirrmeister2017,2,session_0,0.525,Online,With,333,22,EEGNetv4_Without_EA,fine-tuning
