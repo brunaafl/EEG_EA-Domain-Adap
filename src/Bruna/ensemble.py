@@ -66,12 +66,7 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    runs = meta.run.values
-    sessions = meta.session.values
-    one_session = sessions == np.unique(sessions)[0]
-    one_run = runs == np.unique(runs)[0]
-    run_session = np.logical_and(one_session, one_run)
-    len_run = sum(run_session * 1)
+    ea = config.ea.batch
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
@@ -80,7 +75,7 @@ def main(args):
 
     # Define dir where parameters were saved
     if args.ea == 'alignment':
-        ea = len_run
+        ea = ea
         if config.model.type == "EEGNetv4":
             run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
                   'BNCI2014001-alignment-exp_4-0-both'

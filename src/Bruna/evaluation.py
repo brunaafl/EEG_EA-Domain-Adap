@@ -176,7 +176,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
         ea = config.ea.batch
-        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -414,7 +414,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
         ea = config.ea.batch
-        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -570,7 +570,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
         ea = config.ea.batch
-        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -743,7 +743,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
         ea = config.ea.batch
-        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -1065,7 +1065,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
         ea = config.ea.batch
-        train_idx = delete_trials(X, y, np.unique(groups), config.seed, ea)
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -1094,34 +1094,19 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
         subject = groups[test[0]]
 
-        clfs = model_list.copy()
-        clfs.pop(subject - 1)
-        n = int(len(clfs) / 2)
-
-        X_test_ = X[test].get_data()
-        y_test_ = y[test]
-
-        if ea is not None:
-            len_run = ea
-            X_test_ = split_runs_EA(X_test_, len_run)
-
-        w, idx = select_weights(X_test_, y_test_, clfs, n=n+1)
-
-        clfs = [clfs[i] for i in idx]
-        w = w.tolist()
-
         for session in np.unique(sessions):
 
-            eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
-                                          voting=config.ensemble.voting, fit_base_estimators=False)
-
-            create_dataset = TransformaParaWindowsDataset()
-            # Firstly, offline
+            # Select session
             ix = sessions[test] == session
 
             # Select auxiliar trials
             test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
 
+            clfs = model_list.copy()
+            clfs.pop(subject - 1)
+            n = int(len(clfs) / 2)
+
+            # Use this part of the data to select the best classifiers
             X_train = X[test[aux_run]].get_data()
             y_train = y[test[aux_run]]
 
@@ -1129,11 +1114,24 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 len_run = ea
                 X_train = split_runs_EA(X_train, len_run)
 
+            w, idx = select_weights(X_train, y_train, clfs, n=n + 1)
+
+            clfs = [clfs[i] for i in idx]
+            w = w.tolist()
+
+            eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
+                                          voting=config.ensemble.voting, fit_base_estimators=False)
+
+            create_dataset = TransformaParaWindowsDataset()
+
             eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
 
             t_start = time()
             emodel = eclf_pipe.fit(X_train, y_train)
             duration = time() - t_start
+
+            # Now, evaluation
+            # Firstly, offline
 
             #  Select required session
             test_idx = np.logical_and(test_runs, ix)
