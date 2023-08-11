@@ -1097,7 +1097,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
             clfs = model_list.copy()
             clfs.pop(subject - 1)
-            n = int(len(clfs) / 2)
+            n = config.ensemble.n_clf
 
             # Use this part of the data to select the best classifiers
             X_train = X[test[aux_run]].get_data()
@@ -1107,7 +1107,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 len_run = ea
                 X_train = split_runs_EA(X_train, len_run)
 
-            w, idx = select_weights(X_train, y_train, clfs, n=n + 1)
+            w, idx = select_weights(X_train, y_train, clfs, n=n)
 
             clfs = [clfs[i] for i in idx]
             w = w.tolist()
@@ -1149,7 +1149,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 "ft": "Without",
                 "n_samples": len(train),
                 "n_channels": nchan,
-                "exp": f"ensemble_{int(len(clfs) / 2)+1}"
+                "exp": f"ensemble_{n}"
             }
 
             results.append(res)
@@ -1180,7 +1180,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 "ft": "Without",
                 "n_samples": len(train),
                 "n_channels": nchan,
-                "exp": f"online_{int(len(clfs) / 2)+1}"
+                "exp": f"online_{n}"
             }
 
             results.append(res)
