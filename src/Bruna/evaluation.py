@@ -296,7 +296,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
     return results
 
 
-def ftdata(runs, sessions, train, aux_test, dataset):
+def ftdata(runs, sessions, train, aux_test, dataset, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
@@ -320,13 +320,8 @@ def ftdata(runs, sessions, train, aux_test, dataset):
 
     elif dataset == 'Schirrmeister2017':
         r = runs[train] == 'train'
-        r[0:40] = False
+        r[int(ea):] = False
         s = sessions[train] == 'session_0'
-
-    elif dataset == 'Cho2017':
-        r = runs[train] == 'test'
-        r[199:240] = False
-        s = sessions[train] == 'session_0'                    ''
 
     aux_run = np.logical_and(r, s)
     train_idx = np.concatenate((train[aux_run], aux_test))
@@ -334,7 +329,7 @@ def ftdata(runs, sessions, train, aux_test, dataset):
     return train_idx
 
 
-def select_run(runs, sessions, test, dataset, session):
+def select_run(runs, sessions, test, dataset, session, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
@@ -358,13 +353,8 @@ def select_run(runs, sessions, test, dataset, session):
 
     elif dataset == 'Schirrmeister2017':
         r = runs[test] == 'train'
-        r[0:40] = False
-        s = sessions[test] == 'session_0'
-
-    elif dataset == 'Cho2017':
-        r = runs[test] == 'test'
-        r[199:240] = False
-        s = sessions[test] == 'session_0'
+        r[int(ea):] = False
+        s = sessions[test] == session
 
     aux_run = np.logical_and(r, s)
 
