@@ -445,7 +445,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                 aux_test = test[aux_run]
 
                 # Compute train data
-                train_idx = ftdata(runs, sessions,session, train, aux_test, dataset.code)
+                train_idx = ftdata(runs, sessions, session, train, aux_test, dataset.code)
 
                 X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
