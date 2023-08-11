@@ -193,3 +193,34 @@ def delete_trials(X, y, subjects, seed, ea):
 
     return train_idx
 
+
+def delete_trials(X, y, subjects, seed, ea):
+    subj = np.unique(subjects)
+    train_idx = []
+
+    for s in subj:
+        ix = subjects == s
+        pos = np.where(ix)[0]
+
+        X_subj = X[ix]
+        y_subj = y[ix]
+
+        length = len(y_subj)
+        n = ea
+
+        p = (length - n * (length // n)) / length
+
+        if p == 0:
+            train_idx.append(pos)
+
+        # p!=0
+        else:
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
+
+            for j, (ix_train, ix_test) in enumerate(sss.split(X_subj, y_subj)):
+                use = pos[ix_train]
+            train_idx.append(use)
+
+    train_idx = np.concatenate(train_idx)
+
+    return train_idx
