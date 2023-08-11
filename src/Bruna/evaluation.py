@@ -296,10 +296,12 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
     return results
 
 
-def ftdata(runs, sessions, train, aux_test, dataset, ea=24):
+def ftdata(runs, sessions, session, train, aux_test, dataset, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
+    :param session:
+    :param ea:
     :param train:
     :param dataset:
     :param aux_test: test[aux_run]
@@ -314,14 +316,14 @@ def ftdata(runs, sessions, train, aux_test, dataset, ea=24):
     runs_ = np.unique(runs[train])
 
     if dataset == '001-2014':
-        # Select the first run from first session
+        # Select the first run
         r = runs[train] == runs_[0]
-        s = sessions[train] == 'session_T'
+        s = sessions[train] == session
 
     elif dataset == 'Schirrmeister2017':
         r = runs[train] == 'train'
         r[int(ea):] = False
-        s = sessions[train] == 'session_0'
+        s = sessions[train] == session
 
     aux_run = np.logical_and(r, s)
     train_idx = np.concatenate((train[aux_run], aux_test))
@@ -333,6 +335,7 @@ def select_run(runs, sessions, test, dataset, session, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
+    :param dataset:
     :param runs: array indicating eaach trial's run
     :param sessions: array indicating eaach trial's session
     :param test: array with the index of test trials
@@ -442,7 +445,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                 aux_test = test[aux_run]
 
                 # Compute train data
-                train_idx = ftdata(runs, sessions, train, aux_test, dataset.code)
+                train_idx = ftdata(runs, sessions,session, train, aux_test, dataset.code)
 
                 X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
@@ -783,7 +786,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_test = test[aux_idx]
 
                     # Compute train data
-                    train_idx = ftdata(runs, sessions, train, aux_test, dataset.code)
+                    train_idx = ftdata(runs, sessions, session, train, aux_test, dataset.code)
                     X_train = X[train_idx].get_data()
                     y_train = y[train_idx]
 
