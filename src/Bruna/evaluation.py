@@ -180,7 +180,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
-        sessions[train_idx]
+        sessions = sessions[train_idx]
         runs = runs[train_idx]
 
     results = []
@@ -224,6 +224,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                 test_idx = np.logical_and(test_runs, ix)
                 Test = X[test[test_idx]]
                 y_t = y[test[test_idx]]
+                model['Braindecode_dataset'].y = y_t
                 score = _score(model, Test, y_t, scorer)
 
                 res = {
@@ -411,7 +412,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
-        sessions[train_idx]
+        sessions = sessions[train_idx]
         runs = runs[train_idx]
 
     results = []
@@ -567,7 +568,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
-        sessions[train_idx]
+        sessions = sessions[train_idx]
         runs = runs[train_idx]
 
     results = []
@@ -640,6 +641,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
                     test_idx = np.logical_and(test_idx, ix)
                     Test = X[test[test_idx]]
                     y_t = y[test[test_idx]]
+                    model['Braindecode_dataset'].y = y_t
 
                     score = _score(model, Test, y_t, scorer)
 
@@ -740,7 +742,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
-        sessions[train_idx]
+        sessions = sessions[train_idx]
         runs = runs[train_idx]
 
     results = []
@@ -1062,7 +1064,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
-        sessions[train_idx]
+        sessions = sessions[train_idx]
         runs = runs[train_idx]
 
     results = []

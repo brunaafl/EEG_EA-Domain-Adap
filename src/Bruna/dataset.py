@@ -222,5 +222,6 @@ def delete_trials(X, y, subjects, seed, ea):
             train_idx.append(use)
 
     train_idx = np.concatenate(train_idx)
+    train_idx = np.sort(train_idx)
 
     return train_idx
