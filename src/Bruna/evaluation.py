@@ -328,7 +328,7 @@ def ftdata(runs, sessions, session, train, groups, dataset, ea=24):
         for subj in np.unique(groups[train]):
             g = groups[train] == subj
             len_subj = sum(g)
-            first_trials = np.ones(len_subj)
+            first_trials = np.ones(len_subj, dtype=bool)
             first_trials[int(ea):] = 0
             trials.append(first_trials)
         aux_run = np.concatenate(trials)
