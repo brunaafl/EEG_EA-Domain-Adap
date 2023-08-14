@@ -452,8 +452,8 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                 aux_test = test[aux_run]
 
                 # Compute train data
-                aux_run = ftdata(runs, sessions, session, train, groups, dataset.code)
-                train_idx = np.concatenate((train[aux_run], aux_test))
+                run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
+                train_idx = np.concatenate((train[run_train], aux_test))
 
                 X_train = X[train_idx].get_data()
                 y_train = y[train_idx]
@@ -470,7 +470,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                     ftmodel = ftclf.fit(X_train_, y_train)
                     duration = time() - t_start
 
-                    Aux_trials = X[test[aux_run]]
+                    Aux_trials = X[aux_test]
                     _, r_op = euclidean_alignment(Aux_trials.get_data())
                     # Use ref matrix to align test data
                     X_t = np.matmul(r_op, Test.get_data())
@@ -795,8 +795,8 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_test = test[aux_idx]
 
                     # Compute train data
-                    aux_run = ftdata(runs, sessions, session, train, groups, dataset.code)
-                    train_idx = np.concatenate((train[aux_run], aux_test))
+                    run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
+                    train_idx = np.concatenate((train[run_train], aux_test))
                     X_train = X[train_idx].get_data()
                     y_train = y[train_idx]
 
@@ -818,7 +818,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                         ftmodel = ftclf.fit(X_train_, y_train)
                         duration = time() - t_start
 
-                        Aux_trials = X[test[aux_idx]]
+                        Aux_trials = X[aux_test]
                         _, r_op = euclidean_alignment(Aux_trials.get_data())
                         # Use ref matrix to align test data
                         X_t = np.matmul(r_op, Test.get_data())
