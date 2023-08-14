@@ -301,13 +301,13 @@ def ftdata(runs, sessions, session, train, groups, dataset, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
+    :param groups:
     :param session:
     :param ea:
     :param train:
     :param dataset:
-    :param aux_test: test[aux_run]
-    :param runs: array indicating eaach trial's run
-    :param sessions: array indicating eaach trial's session
+    :param runs: array indicating each trial's run
+    :param sessions: array indicating each trial's session
 
     :return:
         :param test_runs: boolean array with True in the index of test trials (and False elsewhere)
