@@ -333,7 +333,7 @@ def ftdata(runs, sessions, session, train, groups, dataset, ea=24):
             trials.append(first_trials)
         aux_run = np.concatenate(trials)
 
-    #train_idx = np.concatenate((train[aux_run], aux_test))
+    # train_idx = np.concatenate((train[aux_run], aux_test))
 
     return aux_run
 
@@ -342,9 +342,10 @@ def select_run(runs, sessions, test, dataset, session, ea=24):
     """
     Select the run that is going to be used as auxiliar
 
+    :param ea:
     :param dataset:
-    :param runs: array indicating eaach trial's run
-    :param sessions: array indicating eaach trial's session
+    :param runs: array indicating each trial's run
+    :param sessions: array indicating each trial's session
     :param test: array with the index of test trials
     :param session: string (name of session)
 
@@ -636,7 +637,8 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session)
+                    test_runs, aux_run = select_run(runs, sessions, test,
+                                                    dataset.code, session, ea=config.ea.batch)
 
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
@@ -1085,10 +1087,10 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
         # Initialize with the saved parameters
         clf.load_params(
-            f_params=str(run_dir/f"final_model_params_{s}_indiv.pkl"),
-            f_history=str(run_dir/f"final_model_history_{s}_indiv.json"),
-            f_criterion=str(run_dir/f"final_model_criterion_{s}_indiv.pkl"),
-            f_optimizer=str(run_dir/f"final_model_optimizer_{s}_indiv.pkl"),
+            f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
+            f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
+            f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
+            f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
         )
 
         model_list.append(clf)
