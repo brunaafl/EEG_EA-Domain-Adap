@@ -650,9 +650,13 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
                     test_runs, aux_run = select_run(runs, sessions, test, dataset.code,
                                                     session, groups, ea=config.ea.batch)
 
+                    print(aux_run)
+
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
+
+                    print(aux_idx)
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
@@ -686,6 +690,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
 
                         # Then, test with one run for ft
                         Aux_trials = X[test[aux_idx]]
+                        print(Aux_trials.shape)
                         _, r_op = euclidean_alignment(Aux_trials.get_data())
                         # Use ref matrix to align test data
                         X_t = np.matmul(r_op, Test.get_data())
