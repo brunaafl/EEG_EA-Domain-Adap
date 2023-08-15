@@ -73,24 +73,45 @@ def main(args):
     if cuda:
         model.cuda()
 
-    # Define dir where parameters were saved
-    if args.ea == 'alignment':
-        ea = ea
-        if config.model.type == "EEGNetv4":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
-                  'BNCI2014001-alignment-exp_4-0-both'
-        elif config.model.type == "ShallowFBCSPNet":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
-                  '-BNCI2014001-alignment-exp_4-0-both'
-    else:
-        ea = None
-        if config.model.type == "EEGNetv4":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
-                  'BNCI2014001-no-alignment-exp_4-0-both'
-        elif config.model.type == "ShallowFBCSPNet":
-            run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final-' \
-                  'BNCI2014001-no-alignment-exp_4-0-both'
-    # Now, Online with 1 run for EA and ft
+    if args.dataset == "BNCI2014001":
+        # Define dir where parameters were saved
+        if args.ea == 'alignment':
+            ea = ea
+            if config.model.type == "EEGNetv4":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                      'BNCI2014001-alignment-exp_4-0-both'
+            elif config.model.type == "ShallowFBCSPNet":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
+                      '-BNCI2014001-alignment-exp_4-0-both'
+        else:
+            ea = None
+            if config.model.type == "EEGNetv4":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                      'BNCI2014001-no-alignment-exp_4-0-both'
+            elif config.model.type == "ShallowFBCSPNet":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final-' \
+                      'BNCI2014001-no-alignment-exp_4-0-both'
+
+    elif args.dataset == "Schirrmeister2017":
+
+        # Define dir where parameters were saved
+        if args.ea == 'alignment':
+            ea = ea
+            if config.model.type == "EEGNetv4":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                      'Schirrmeister2017-alignment-exp_4-0-both'
+            elif config.model.type == "ShallowFBCSPNet":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
+                      '-Schirrmeister2017-alignment-exp_4-0-both'
+        else:
+            ea = None
+            if config.model.type == "EEGNetv4":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                      'Schirrmeister2017-no-alignment-exp_4-0-both'
+            elif config.model.type == "ShallowFBCSPNet":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final-' \
+                      'Schirrmeister2017-no-alignment-exp_4-0-both'
+        # Now, Online with 1 run for EA and ft
 
     results = ensemble_simple_load(dataset, paradigm, Path(run), config, model, ea=ea)
 
