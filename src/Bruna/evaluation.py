@@ -690,7 +690,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
 
                         # Then, test with one run for ft
                         Aux_trials = X[test[aux_idx]]
-                        print(Aux_trials.shape)
+                        print(Aux_trials.get_data().shape)
                         _, r_op = euclidean_alignment(Aux_trials.get_data())
                         # Use ref matrix to align test data
                         X_t = np.matmul(r_op, Test.get_data())
