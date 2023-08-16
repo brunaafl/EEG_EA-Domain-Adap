@@ -906,7 +906,9 @@ def create_clf_ft(model, config):
 
 def select_weights(X_test, y_test, models, n=5, exp=True):
     scores = []
+    print('a')
     for model in models:
+        print('model')
         y_pr = model.predict(X_test)
         score = accuracy_score(y_test, y_pr)
         print(score)
