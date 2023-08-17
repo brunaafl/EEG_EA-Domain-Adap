@@ -13,7 +13,7 @@ train:
     experiment_name: 'ensemble_m1_hard'
 ensemble:
     voting: 'hard'
-    n_clf : 4
+    n_clf : 3
 model:
     type: 'EEGNetv4'
     drop_prob: 0.35
