@@ -109,7 +109,7 @@ def main(args):
                 run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
                       'Schirrmeister2017-no-alignment-exp_4-0-both'
             elif config.model.type == "ShallowFBCSPNet":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final_test-' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final-' \
                       'Schirrmeister2017-no-alignment-exp_4-0-both'
         # Now, Online with 1 run for EA and ft
 
