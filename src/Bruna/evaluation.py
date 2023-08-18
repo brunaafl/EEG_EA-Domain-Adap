@@ -375,9 +375,9 @@ def select_run(runs, sessions, test, dataset, session, groups, ea=24):
             trials.append(first_trials)
         aux_run = np.concatenate(trials)
 
-        #r = runs[test] == 'train'
-        #r[int(ea):] = False
-        #s = sessions[test] == session
+        # r = runs[test] == 'train'
+        # r[int(ea):] = False
+        # s = sessions[test] == session
 
     # Select the opposit for the test
     test_runs = np.invert(aux_run)
@@ -940,6 +940,155 @@ def divide(list_2d):
     return l1, l2
 
 
+def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
+    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    nchan = (
+        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+    )
+
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions = sessions[train_idx]
+        runs = runs[train_idx]
+
+    results = []
+    model_list = []
+    # First, load all classifiers
+
+    for s in np.unique(groups):
+        clf = define_clf(deepcopy(model), config)
+        clf.initialize()
+
+        # Initialize with the saved parameters
+        clf.load_params(
+            f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
+            f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
+            f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
+            f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
+        )
+
+        model_list.append(clf)
+
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
+
+        subject = groups[test[0]]
+
+        for session in np.unique(sessions):
+
+            # Select session
+            ix = sessions[test] == session
+
+            # Select auxiliar trials
+            test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session, groups)
+
+            clfs = model_list.copy()
+            clfs.pop(subject - 1)
+            n = config.ensemble.n_clf
+
+            # Use this part of the data to select the best classifiers
+            X_train = X[test[aux_run]].get_data()
+            y_train = y[test[aux_run]]
+
+            if ea is not None:
+                len_run = ea
+                X_train = split_runs_EA(X_train, len_run)
+
+            w, idx = select_weights(X_train, y_train, clfs, n=n)
+
+            clfs = [clfs[i] for i in idx]
+            w = w.tolist()
+
+            eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
+                                          voting=config.ensemble.voting, fit_base_estimators=False)
+
+            create_dataset = TransformaParaWindowsDataset()
+
+            eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
+
+            t_start = time()
+            emodel = eclf_pipe.fit(X_train, y_train)
+            duration = time() - t_start
+
+            # Now, evaluation
+
+            '''
+            
+            if ea is not None:
+                len_run = ea
+                X_test = split_runs_EA(X_test, len_run)
+
+            y_pr = emodel.predict(X_test)
+            score = accuracy_score(y_test, y_pr)
+
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "test": subject,
+                "session": session,
+                "score": score,
+                "type": "Offline",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "exp": f"ensemble_{n}"
+            }
+
+            results.append(res)
+            '''
+
+            # Simulated online
+            # Select required session
+            test_idx = np.logical_and(test_runs, ix)
+            Test = X[test[test_idx]].get_data()
+            y_t = y[test[test_idx]]
+            create_dataset.y = y_t
+
+            if ea is not None:
+                # Then, test with one run for ft
+                Aux_trials = X[test[aux_run]]
+                _, r_op = euclidean_alignment(Aux_trials.get_data())
+                # Use ref matrix to align test data
+                Test = np.matmul(r_op, Test)
+
+            # Compute score
+            y_pr = emodel.predict(Test)
+            score = accuracy_score(y_t, y_pr)
+
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "test": subject,
+                "session": session,
+                "score": score,
+                "type": "Online",
+                "ft": "Without",
+                "n_samples": len(train),
+                "n_channels": nchan,
+                "exp": f"online_{n}"
+            }
+
+            results.append(res)
+    results = pd.DataFrame(results)
+    return results
+
+
 # WHAT I'M GOING TO DO:
 def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
     X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
@@ -1059,155 +1208,4 @@ def ensemble_simple(dataset, paradigm, ea=None, model_list=None, exp=True):
         else:
             return 'No models were given'
 
-    return results
-
-
-def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
-    # extract metadata
-    groups = metadata.subject.values
-    sessions = metadata.session.values
-    runs = metadata.run.values
-    n_subjects = len(dataset.subject_list)
-
-    # encode labels
-    le = LabelEncoder()
-    y = le.fit_transform(y)
-    # evaluation
-    cv = LeaveOneGroupOut()
-
-    nchan = (
-        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-    )
-
-    # Delete some trials
-    if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
-        X = X[train_idx]
-        y = y[train_idx]
-        groups = groups[train_idx]
-        sessions = sessions[train_idx]
-        runs = runs[train_idx]
-
-    results = []
-    model_list = []
-    # First, load all classifiers
-
-    for s in np.unique(groups):
-        clf = define_clf(deepcopy(model), config)
-        clf.initialize()
-
-        # Initialize with the saved parameters
-        clf.load_params(
-            f_params=str(run_dir / f"final_model_params_{s}_indiv.pkl"),
-            f_history=str(run_dir / f"final_model_history_{s}_indiv.json"),
-            f_criterion=str(run_dir / f"final_model_criterion_{s}_indiv.pkl"),
-            f_optimizer=str(run_dir / f"final_model_optimizer_{s}_indiv.pkl"),
-        )
-
-        model_list.append(clf)
-
-    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
-
-        subject = groups[test[0]]
-
-        for session in np.unique(sessions):
-
-            # Select session
-            ix = sessions[test] == session
-
-            # Select auxiliar trials
-            test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session, groups)
-
-            clfs = model_list.copy()
-            clfs.pop(subject - 1)
-            n = config.ensemble.n_clf
-
-            # Use this part of the data to select the best classifiers
-            X_train = X[test[aux_run]].get_data()
-            y_train = y[test[aux_run]]
-
-            if ea is not None:
-                len_run = ea
-                X_train = split_runs_EA(X_train, len_run)
-
-            w, idx = select_weights(X_train, y_train, clfs, n=n)
-
-            clfs = [clfs[i] for i in idx]
-            w = w.tolist()
-
-            eclf = EnsembleVoteClassifier(clfs=clfs, weights=w,
-                                          voting=config.ensemble.voting, fit_base_estimators=False)
-
-            create_dataset = TransformaParaWindowsDataset()
-
-            eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
-
-            t_start = time()
-            emodel = eclf_pipe.fit(X_train, y_train)
-            duration = time() - t_start
-
-            # Now, evaluation
-            # Firstly, offline
-
-            #  Select required session
-            test_idx = np.logical_and(test_runs, ix)
-            X_test = X[test[test_idx]].get_data()
-            y_test = y[test[test_idx]]
-            create_dataset.y = y_test
-
-            if ea is not None:
-                len_run = ea
-                X_test = split_runs_EA(X_test, len_run)
-
-            y_pr = emodel.predict(X_test)
-            score = accuracy_score(y_test, y_pr)
-
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "test": subject,
-                "session": session,
-                "score": score,
-                "type": "Offline",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "exp": f"ensemble_{n}"
-            }
-
-            results.append(res)
-
-            # Simulated online
-            Test = X[test[test_idx]].get_data()
-            y_t = y[test[test_idx]]
-            create_dataset.y = y_t
-
-            if ea is not None:
-                # Then, test with one run for ft
-                Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials.get_data())
-                # Use ref matrix to align test data
-                Test = np.matmul(r_op, Test)
-
-            # Compute score
-            y_pr = emodel.predict(Test)
-            score = accuracy_score(y_t, y_pr)
-
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "test": subject,
-                "session": session,
-                "score": score,
-                "type": "Online",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "exp": f"online_{n}"
-            }
-
-            results.append(res)
-    results = pd.DataFrame(results)
     return results
