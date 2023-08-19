@@ -74,12 +74,10 @@ def clf_tuning(model, config):
         max_epochs=n_epochs,
         train_split=None,
         # train /test split is handled by GridSearchCV
-        callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+        callbacks=[EarlyStopping(monitor='train_loss', patience=patience),
                    lrscheduler,
                    EpochScoring(scoring='accuracy', on_train=True,
-                                name='train_acc', lower_is_better=False),
-                   EpochScoring(scoring='accuracy', on_train=False,
-                                name='valid_acc', lower_is_better=False)],
+                                name='train_acc', lower_is_better=False),],
         device=device,
     )
 
