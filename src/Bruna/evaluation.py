@@ -997,6 +997,8 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
             # Select auxiliar trials
             test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session, groups)
+            print(test_runs)
+            print(aux_run)
 
             clfs = model_list.copy()
             clfs.pop(subject - 1)
