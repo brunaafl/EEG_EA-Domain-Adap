@@ -10,7 +10,7 @@ train:
     batch_size: 64
     lr: 0.000825
     valid_split: 0.2
-    experiment_name: 'ensemble_m2_hard_5'
+    experiment_name: 'ensemble_m2_hard_3'
 ensemble:
     voting: 'hard'
     n_clf : 3
