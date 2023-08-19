@@ -56,6 +56,10 @@ def define_clf(model, config):
 def clf_tuning(model, config):
     batch_size = config.train.batch_size
     n_epochs = config.train.n_epochs
+    patience = config.train.patience
+    weight_decay = config.train.weight_decay
+
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs - 1, eta_min=0)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -65,15 +69,17 @@ def clf_tuning(model, config):
         criterion=torch.nn.NLLLoss,
         optimizer=torch.optim.AdamW,
         optimizer__lr=[],
-        optimizer__weight_decay=[],
+        optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
         max_epochs=n_epochs,
-        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
+        train_split=None,
         # train /test split is handled by GridSearchCV
-        callbacks=[
-            "accuracy",
-            ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=n_epochs - 1)),
-        ],
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+                   lrscheduler,
+                   EpochScoring(scoring='accuracy', on_train=True,
+                                name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False,
+                                name='valid_acc', lower_is_better=False)],
         device=device,
     )
 
