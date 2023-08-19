@@ -10,7 +10,7 @@ train:
     batch_size: 64
     lr: 0.000925
     valid_split: 0.2
-    experiment_name: 'indiv_m2_final'
+    experiment_name: 'indiv_m2_final_test'
 ft:
     n_epochs: 600
     lr: 0.0000325
@@ -19,7 +19,7 @@ ft:
     weight_decay: 1e-5
 model:
     type: 'ShallowFBCSPNet'
-    drop_prob: 0.35
+    drop_prob: 0.25
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'
