@@ -5,21 +5,22 @@ train:
     num_workers: 10
     run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
     n_epochs: 1000
+    n_epochs_ft: 600
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
     lr: 0.000925
     valid_split: 0.2
-    experiment_name: 'indiv_m2_final_test'
+    experiment_name: 'indiv_m2_final'
 ft:
     n_epochs: 600
-    lr: 0.0000325
+    lr: 0.0000425
     patience: 150
     batch_size: 16
     weight_decay: 1e-5
 model:
     type: 'ShallowFBCSPNet'
-    drop_prob: 0.25
+    drop_prob: 0.35
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'
