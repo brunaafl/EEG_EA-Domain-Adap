@@ -373,7 +373,10 @@ def select_run(runs, sessions, test, dataset, session, groups, ea=24):
             first_trials = np.ones(len_subj, dtype=bool)
             first_trials[int(ea):] = 0
             trials.append(first_trials)
-        aux_run = np.concatenate(trials)
+        r = np.concatenate(trials)
+        s = sessions[test] == session
+
+        aux_run = np.logical_and(r, s)
 
         # r = runs[test] == 'train'
         # r[int(ea):] = False
@@ -802,7 +805,8 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     # Select runs used for the EA test
                     # test_runs we are going to use for test
                     # aux_run we are going to use for the EA
-                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session, groups)
+                    test_runs, aux_run = select_run(runs, sessions, test, dataset.code,
+                                                    session, groups, ea=config.ea.batch)
                     # Select just the required part
                     aux_idx = np.logical_and(aux_run, test_subj)
                     len_run = sum(aux_idx * 1)
@@ -990,6 +994,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
     for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-EnsembleModels"):
 
+        # Select the test subject
         subject = groups[test[0]]
 
         for session in np.unique(sessions):
@@ -998,7 +1003,8 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             ix = sessions[test] == session
 
             # Select auxiliar trials
-            test_runs, aux_run = select_run(runs, sessions, test, dataset.code, session, groups)
+            test_runs, aux_run = select_run(runs, sessions, test, dataset.code,
+                                            session, groups, ea=config.ea.batch)
 
             clfs = model_list.copy()
             clfs.pop(subject - 1)
