@@ -4,8 +4,7 @@ Baseline script to analyse the EEG Dataset.
 """
 
 import torch
-import numpy as np
-import pandas as pd
+from pathlib import Path
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 
@@ -108,7 +107,7 @@ def main(args):
             run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-{args.dataset}-alignment' \
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results = online_shared(dataset, paradigm, pipes, model, run, config)
+    results = online_shared(dataset, paradigm, pipes, model, Path(run), config)
 
     print(results.head())
 

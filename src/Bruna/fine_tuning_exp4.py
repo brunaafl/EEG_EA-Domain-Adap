@@ -5,7 +5,8 @@ Baseline script to analyse the EEG Dataset.
 
 import torch
 import numpy as np
-import pandas as pd
+
+from pathlib import Path
 
 from omegaconf import OmegaConf
 
@@ -111,7 +112,7 @@ def main(args):
             run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/individ_m3_final-BNCI2014001-alignment' \
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
-    results = online_indiv(dataset, paradigm, pipes, model, run, config)
+    results = online_indiv(dataset, paradigm, pipes, model, Path(run), config)
 
     print(results.head())
 
