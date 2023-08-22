@@ -18,7 +18,7 @@ from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from model_validation import split_train_val, split_run, split_size
 from alignment import euclidean_alignment
@@ -153,3 +153,75 @@ def split_runs_EA(X, len_run):
     X_EA = np.concatenate(X_aux)
     return X_EA
 
+
+def delete_trials(X, y, subjects, seed, ea):
+    subj = np.unique(subjects)
+    train_idx = []
+    l = []
+
+    for i in range(len(subj)):
+        s = subj[i]
+
+        ix = subjects == s
+        X_subj = X[ix]
+        y_subj = y[ix]
+
+        length = len(y_subj)
+        l.append(length)
+
+        n = ea
+
+        p = (length - n * (length // n)) / length
+
+        if p == 0:
+            ix_train = np.where(ix)[0]
+            train_idx.append(ix_train)
+
+        if p != 0:
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
+
+            for j, (ix_train, ix_test) in enumerate(sss.split(X_subj, y_subj)):
+
+                if i != 0:
+                    ix_train = ix_train + i * l[i - 1]
+                else:
+                    ix_train = ix_train
+
+            train_idx.append(ix_train)
+
+    train_idx = np.concatenate(train_idx)
+
+    return train_idx
+
+
+def delete_trials(X, y, subjects, seed, ea):
+    subj = np.unique(subjects)
+    train_idx = []
+
+    for s in subj:
+        ix = subjects == s
+        pos = np.where(ix)[0]
+
+        X_subj = X[ix]
+        y_subj = y[ix]
+
+        length = len(y_subj)
+        n = ea
+
+        p = (length - n * (length // n)) / length
+
+        if p == 0:
+            train_idx.append(pos)
+
+        # p!=0
+        else:
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=p, random_state=seed)
+
+            for j, (ix_train, ix_test) in enumerate(sss.split(X_subj, y_subj)):
+                use = pos[ix_train]
+            train_idx.append(use)
+
+    train_idx = np.concatenate(train_idx)
+    train_idx = np.sort(train_idx)
+
+    return train_idx

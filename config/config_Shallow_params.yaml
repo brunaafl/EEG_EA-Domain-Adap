@@ -1,0 +1,15 @@
+seed: 42
+train:
+    num_workers: 10
+    run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
+    n_epochs: 1000
+    patience: 250
+    batch_size: 64
+    valid_split: 0.2
+    experiment_name: 'Shallow_hyperparam'
+model:
+    type: 'ShallowFBCSPNet'
+    drop_prob: 0.4
+    final_conv_length: 'auto'
+dataset:
+    path: '/mnt/beegfs/projects/moabb/mne_data'

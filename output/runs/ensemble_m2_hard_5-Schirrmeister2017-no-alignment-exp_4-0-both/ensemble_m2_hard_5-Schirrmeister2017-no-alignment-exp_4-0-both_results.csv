@@ -1,0 +1,15 @@
+,time,dataset,test,session,score,type,ft,n_samples,n_channels,exp
+0,0.20087146759033203,Schirrmeister2017,1,session_0,0.5,Online,Without,6360,22,online_5
+1,0.14612436294555664,Schirrmeister2017,2,session_0,0.5021929824561403,Online,Without,6120,22,online_5
+2,0.14358234405517578,Schirrmeister2017,3,session_0,0.4979166666666667,Online,Without,6096,22,online_5
+3,0.14821267127990723,Schirrmeister2017,4,session_0,0.5,Online,Without,6072,22,online_5
+4,0.14571166038513184,Schirrmeister2017,5,session_0,0.5,Online,Without,6168,22,online_5
+5,0.1488947868347168,Schirrmeister2017,6,session_0,0.5,Online,Without,6096,22,online_5
+6,0.14600372314453125,Schirrmeister2017,7,session_0,0.4875,Online,Without,6096,22,online_5
+7,0.14489531517028809,Schirrmeister2017,8,session_0,0.5,Online,Without,6192,22,online_5
+8,0.15117669105529785,Schirrmeister2017,9,session_0,0.4979166666666667,Online,Without,6096,22,online_5
+9,0.14659690856933594,Schirrmeister2017,10,session_0,0.5,Online,Without,6096,22,online_5
+10,0.14978647232055664,Schirrmeister2017,11,session_0,0.5,Online,Without,6096,22,online_5
+11,0.14648008346557617,Schirrmeister2017,12,session_0,0.4979166666666667,Online,Without,6096,22,online_5
+12,0.14760041236877441,Schirrmeister2017,13,session_0,0.5,Online,Without,6120,22,online_5
+13,0.1464078426361084,Schirrmeister2017,14,session_0,0.4979166666666667,Online,Without,6096,22,online_5
