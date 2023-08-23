@@ -10,10 +10,10 @@ train:
     batch_size: 64
     lr: 0.000825
     valid_split: 0.2
-    experiment_name: 'ensemble_m1_hard_3'
+    experiment_name: 'ensemble_m1_hard_5'
 ensemble:
     voting: 'hard'
-    n_clf : 3
+    n_clf : 5
 model:
     type: 'EEGNetv4'
     drop_prob: 0.35
