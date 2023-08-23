@@ -684,8 +684,6 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
 
                     results.append(res)
 
-                    print(_score(model, X[test[aux_idx]].get_data(), y[test[aux_idx]], scorer))
-
                     # If we are analyzing with EA
                     if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
 
@@ -915,12 +913,10 @@ def select_weights(X_test, y_test, models, n=5, exp=True):
     for model in models:
         y_pr = model.predict(X_test)
         score = accuracy_score(y_test, y_pr)
-        print(score)
         scores.append(score)
 
     scores = np.array(scores)
     scores_idx = np.argsort(scores)[::-1][:n]
-    print(scores_idx)
     w = scores[scores_idx]
 
     if exp:
