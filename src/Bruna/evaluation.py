@@ -175,8 +175,8 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
 
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -427,8 +427,8 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
 
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -584,8 +584,8 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
 
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -760,8 +760,8 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
 
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -964,8 +964,8 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
     # Delete some trials
     if dataset.code == "Schirrmeister2017":
-        ea = config.ea.batch
-        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
         X = X[train_idx]
         y = y[train_idx]
         groups = groups[train_idx]
@@ -1054,32 +1054,6 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             duration = time() - t_start
 
             # Now, evaluation
-
-            '''
-            
-            if ea is not None:
-                len_run = ea
-                X_test = split_runs_EA(X_test, len_run)
-
-            y_pr = emodel.predict(X_test)
-            score = accuracy_score(y_test, y_pr)
-
-            res = {
-                "time": duration,
-                "dataset": dataset.code,
-                "test": subject,
-                "session": session,
-                "score": score,
-                "type": "Offline",
-                "ft": "Without",
-                "n_samples": len(train),
-                "n_channels": nchan,
-                "exp": f"ensemble_{n}"
-            }
-
-            results.append(res)
-            '''
-
             # Simulated online
             # Select required session
             test_idx = np.logical_and(test_runs, ix)
