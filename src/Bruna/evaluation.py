@@ -913,8 +913,6 @@ def select_weights(X_test, y_test, models, n=5, exp=True):
     for model in models:
         y_pr = model.predict(X_test)
         score = accuracy_score(y_test, y_pr)
-        print(score)
-        print(_score(model, X_test, y_test, get_scorer('accuracy')))
         scores.append(score)
 
     scores = np.array(scores)
@@ -1017,25 +1015,9 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             X_train = X[test[aux_run]].get_data()
             y_train = y[test[aux_run]]
 
-            for m in range(len(clfs)):
-                print('models')
-                print(subj_idx[m])
-                print(_score(clfs[m], X_train, y_train, get_scorer('accuracy')))
-                y_pr = clfs[m].predict(X_train)
-                score = accuracy_score(y_train, y_pr)
-                print(score)
-
             if ea is not None:
                 len_run = ea
                 X_train = split_runs_EA(X_train, len_run)
-
-            for m in range(len(clfs)):
-                print('models')
-                print(subj_idx[m])
-                print(_score(clfs[m], X_train, y_train, get_scorer('accuracy')))
-                y_pr = clfs[m].predict(X_train)
-                score = accuracy_score(y_train, y_pr)
-                print(score)
 
             w, idx = select_weights(X_train, y_train, clfs, n=n)
 
