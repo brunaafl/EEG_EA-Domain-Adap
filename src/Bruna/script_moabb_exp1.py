@@ -7,7 +7,7 @@ import torch
 import numpy as np
 import pandas as pd
 
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
@@ -49,7 +49,7 @@ def main(args):
     paradigm = MotorImagery_(events=events, channels=channels, n_classes=len(events), metric='accuracy', resample=250)
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
+        dataset = BNCI2014_001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
