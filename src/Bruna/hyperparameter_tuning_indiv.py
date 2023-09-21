@@ -10,7 +10,7 @@ import pandas as pd
 from omegaconf import OmegaConf
 from tqdm import tqdm
 
-from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
 from train import init_model, clf_tuning, define_clf
@@ -51,7 +51,7 @@ def main(args):
     paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', channels=channels, resample=250)
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014_001()
+        dataset = BNCI2014001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
