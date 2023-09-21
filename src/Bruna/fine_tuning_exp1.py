@@ -6,7 +6,7 @@ Baseline script to analyse the EEG Dataset.
 import torch
 from pathlib import Path
 
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
@@ -17,7 +17,7 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 from train import define_clf, init_model
 from evaluation import online_shared
 from util import parse_args, set_determinism, set_run_dir
-from paradigm import MotorImagery_, LeftRightImagery_
+from paradigm import MotorImagery_
 
 """
 For the shared model
@@ -48,7 +48,7 @@ def main(args):
     paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', resample=250)
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
+        dataset = BNCI2014_001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
@@ -57,7 +57,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
+        paradigm = MotorImagery_(resample=100.0, metric='accuracy')
 
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
