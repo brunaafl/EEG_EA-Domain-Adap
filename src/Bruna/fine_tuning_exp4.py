@@ -20,7 +20,7 @@ from evaluation import individual_models, online_indiv
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
-from paradigm import MotorImagery_, LeftRightImagery_
+from paradigm import MotorImagery_
 
 """
 For the imdividual model
@@ -60,7 +60,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
+        #paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
