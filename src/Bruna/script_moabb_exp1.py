@@ -18,7 +18,7 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 from train import define_clf, init_model
 from evaluation import shared_model, online_shared
 from util import parse_args, set_determinism, set_run_dir
-from paradigm import MotorImagery_, LeftRightImagery_
+from paradigm import MotorImagery_
 
 """
 For the shared model
@@ -58,7 +58,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
+        paradigm = MotorImagery_(resample=250, metric='accuracy')
 
     events = ["left_hand", "right_hand"]
     n_classes = len(events)

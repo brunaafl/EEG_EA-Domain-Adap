@@ -9,13 +9,13 @@ import pandas as pd
 
 from omegaconf import OmegaConf
 
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
 from train import init_model, clf_tuning
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
-from paradigm import MotorImagery_, LeftRightImagery_
+from paradigm import MotorImagery_
 
 from sklearn.model_selection import GridSearchCV, LeaveOneGroupOut, train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -49,7 +49,7 @@ def main(args):
     paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', channels=channels, resample=250)
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
+        dataset = BNCI2014_001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
@@ -58,7 +58,7 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
+        # paradigm = LeftRightImagery_(resample=100.0, metric='accuracy')
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
@@ -88,15 +88,15 @@ def main(args):
     if config.model.type == 'Deep4Net':
 
         param_grid = {
-            'optimizer__lr': [0.000725, 0.000625, 0.000525, 0.000425, 0.000325, 0.000225],
+            'optimizer__lr': [0.000725, 0.000625, 0.000525, 0.000425],
             'optimizer__weight_decay': [0.00001, 0.0001, 0.0002]
         }
 
     elif config.model.type == 'ShallowFBCSPNet':
 
         param_grid = {
-            'optimizer__lr': [0.000825, 0.000725, 0.000625, 0.000525],
-            'optimizer__weight_decay': [0, 0.0000125, 0.000125]
+            'optimizer__lr': [0.000925, 0.000825, 0.000725, 0.000625, 0.000525],
+            'optimizer__weight_decay': [0.0000825, 0.000125]
         }
 
     search = GridSearchCV(
