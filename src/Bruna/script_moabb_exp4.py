@@ -96,12 +96,12 @@ def main(args):
         pipes[f"{config.model.type}_Without_EA"] = pipe
 
     # Evaluation for this experiment
-    results_, model_list = individual_models(dataset, paradigm, pipes, run_dir, config)
+    results, model_list = individual_models(dataset, paradigm, pipes, run_dir, config)
 
     # Now, Online with 1 run for EA and ft
-    results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
+    # results_ft = online_indiv(dataset, paradigm, pipes, model, run_dir, config)
 
-    results = pd.concat([results_, results_ft])
+    # results = pd.concat([results, results_ft])
 
     # results = evaluation.process(pipes)
     print(results.head())

@@ -106,7 +106,7 @@ def main(args):
     elif config.model.type == 'ShallowFBCSPNet':
 
         param_grid = {
-            'optimizer__lr': [0.00125, 0.001, 0.000925, 0.000825, 0.000725, 0.000625],
+            'optimizer__lr': [0.00125, 0.001, 0.000925, 0.000825, 0.000725],
         }
 
     params = []
