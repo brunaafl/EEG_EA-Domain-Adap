@@ -109,7 +109,6 @@ def main(args):
     # Save results
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
- 
     print("---------------------------------------")
 
     # return results
