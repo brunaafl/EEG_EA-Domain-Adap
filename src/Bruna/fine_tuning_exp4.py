@@ -109,8 +109,8 @@ def main(args):
             run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/indiv_m1_final-{args.dataset}-no' \
                   '-alignment-exp_4-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/indiv_m2_final-{args.dataset}-alignment' \
-                  '-exp_4-0-both'
+            run = (f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/indiv_m2_final-{args.dataset}-no'
+                   f'-alignment-exp_4-0-both')
     # Now, Online with 1 run for EA and ft
     results = online_indiv(dataset, paradigm, pipes, model, Path(run), config)
 
