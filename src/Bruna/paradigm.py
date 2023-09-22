@@ -7,5 +7,6 @@ class MotorImagery_(MotorImagery):
         super().__init__(**kwargs)
         self.metric = metric
 
+    @property
     def scoring(self):
         return self.metric
