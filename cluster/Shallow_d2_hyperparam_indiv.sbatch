@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=d2_hyperparam_indiv
+#SBATCH --job-name=d2_m2_hyperparam_indiv
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
@@ -8,7 +8,7 @@
 #SBATCH --mail-user=a.bruno@ufabc.edu.br 
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=ALL
-#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/d2_hyperparam_indiv_%j.log
+#SBATCH --output=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/logs/d2_m2_hyperparam_indiv_%j.log
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
