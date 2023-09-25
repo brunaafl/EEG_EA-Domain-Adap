@@ -12,7 +12,7 @@
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
-python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/fine_tuning_exp1.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config.yaml  --num_exp 'exp_1' --dataset 'BNCI2014001' --ea 'no-alignment'
+python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/fine_tuning_exp1.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_ft_indiv.yaml  --num_exp 'exp_1' --dataset 'BNCI2014001' --ea 'no-alignment'
 
 
  

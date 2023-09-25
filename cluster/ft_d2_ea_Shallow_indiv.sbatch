@@ -12,7 +12,7 @@
 
 module load /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/cluster/python
 
-python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/fine_tuning_exp4.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_indiv_Shallow.yaml  --num_exp 'exp_4' --dataset 'Schirrmeister2017' --ea 'alignment'
+python /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/fine_tuning_exp4.py --config_file=/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/config/config_Shallow_ft_indiv.yaml  --num_exp 'exp_4' --dataset 'Schirrmeister2017' --ea 'alignment'
 
 
  
