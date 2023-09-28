@@ -10,12 +10,12 @@ train:
     batch_size: 64
     lr: 0.000825
     valid_split: 0.2
-    experiment_name: 'indiv_ft_m1'
+    experiment_name: 'indiv_ft_m1_625'
 ft:
     n_epochs: 600
-    lr: 0.0000625
+    lr: 0.0000525
     patience: 150
-    batch_size: 10
+    batch_size: 8
     weight_decay: 1e-5
 model:
     type: 'EEGNetv4'
