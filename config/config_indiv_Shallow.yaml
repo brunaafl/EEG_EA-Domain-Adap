@@ -13,9 +13,9 @@ train:
     experiment_name: 'indiv_m2_final'
 ft:
     n_epochs: 600
-    lr: 0.0000425
+    lr: 0.0000625
     patience: 150
-    batch_size: 10
+    batch_size: 8
     weight_decay: 1e-5
 model:
     type: 'ShallowFBCSPNet'
