@@ -96,7 +96,7 @@ def main(args):
     overwrite = True
     evaluation = CrossSubjectEvaluation(
         paradigm=paradigm,
-        datasets=dataset,
+        datasets=[dataset],
         suffix="test",
         overwrite=overwrite,
         return_epochs=True,
