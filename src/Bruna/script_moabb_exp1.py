@@ -1,6 +1,5 @@
 """
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
-         Bruna Lopes <brunajaflopes@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
 
