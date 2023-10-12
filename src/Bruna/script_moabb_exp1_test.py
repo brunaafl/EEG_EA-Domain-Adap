@@ -25,8 +25,6 @@ from paradigm import MotorImagery_
 """
 For the shared model
 """
-
-
 def main(args):
     """
     Parameters
