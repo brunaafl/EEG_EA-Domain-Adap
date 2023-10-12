@@ -226,6 +226,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                 y_t = y[test[test_idx]]
                 model['Braindecode_dataset'].y = y_t
                 score = _score(model, Test, y_t, scorer)
+                print(score)
 
                 res = {
                     "time": duration,
