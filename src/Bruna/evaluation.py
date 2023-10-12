@@ -158,7 +158,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
              model_list: list of clf
 
     """
-    X, y, metadata = paradigm.get_data(dataset=dataset)
+    X, y, metadata = paradigm.get_data(dataset=dataset, return_epochs=True)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -226,7 +226,6 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                 y_t = y[test[test_idx]]
                 model['Braindecode_dataset'].y = y_t
                 score = _score(model, Test, y_t, scorer)
-                print(score)
 
                 res = {
                     "time": duration,
@@ -293,7 +292,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                     "exp": "1run"
                 }
                 results.append(res)
-        break
+
     results = pd.DataFrame(results)
     return results
 
