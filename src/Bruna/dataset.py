@@ -14,7 +14,6 @@ from braindecode.preprocessing import create_windows_from_events
 import mne
 
 from moabb.datasets import BNCI2014001, PhysionetMI
-from moabb.evaluations import WithinSessionEvaluation
 from moabb.paradigms import LeftRightImagery
 from moabb.utils import set_download_dir
 
