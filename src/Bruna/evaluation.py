@@ -158,7 +158,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
              model_list: list of clf
 
     """
-    X, y, metadata = paradigm.get_data(dataset=dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset=dataset)  # Removing return_epochs = True
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -247,13 +247,13 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                 if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
 
                     # First, zero shot
-                    score_zeroshot = _score(model["Net"], Test.get_data(), y_t, scorer)
+                    score_zeroshot = _score(model["Net"], Test, y_t, scorer)
 
                     # Then, test with one run for ft
                     Aux_trials = X[test[aux_run]]
-                    _, r_op = euclidean_alignment(Aux_trials.get_data())
+                    _, r_op = euclidean_alignment(Aux_trials)
                     # Use ref matrix to align test data
-                    X_t = np.matmul(r_op, Test.get_data())
+                    X_t = np.matmul(r_op, Test)
                     # Compute score
                     score_EA = _score(model["Net"], X_t, y_t, scorer)
 
@@ -406,7 +406,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
     nn_model
 
     """
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset)  # Removing return_epochs=True
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -469,7 +469,7 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                 run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
                 train_idx = np.concatenate((train[run_train], aux_test))
 
-                X_train = X[train_idx].get_data()
+                X_train = X[train_idx]
                 y_train = y[train_idx]
 
                 ix = sessions[test] == session
@@ -485,16 +485,16 @@ def online_shared(dataset, paradigm, pipes, nn_model, run_dir, config):
                     duration = time() - t_start
 
                     Aux_trials = X[aux_test]
-                    _, r_op = euclidean_alignment(Aux_trials.get_data())
+                    _, r_op = euclidean_alignment(Aux_trials)
                     # Use ref matrix to align test data
-                    X_t = np.matmul(r_op, Test.get_data())
+                    X_t = np.matmul(r_op, Test)
                 else:
 
                     t_start = time()
                     ftmodel = ftclf.fit(X_train, y_train)
                     duration = time() - t_start
 
-                    X_t = Test.get_data()
+                    X_t = Test
 
                 # Predict on the test set
                 score = _score(ftmodel, X_t, y_t, scorer)
@@ -563,7 +563,7 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
              model_list: list of clf
 
     """
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -690,9 +690,9 @@ def individual_models(dataset, paradigm, pipes, run_dir, config):
                         # Then, test with one run for ft
                         Aux_trials = X[test[aux_idx]]
 
-                        _, r_op = euclidean_alignment(Aux_trials.get_data())
+                        _, r_op = euclidean_alignment(Aux_trials)
                         # Use ref matrix to align test data
-                        X_t = np.matmul(r_op, Test.get_data())
+                        X_t = np.matmul(r_op, Test)
                         # Compute score
                         score_EA = _score(model["Net"], X_t, y_t, scorer)
 
@@ -739,7 +739,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
     nn_model
 
     """
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -814,7 +814,7 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     # Compute train data
                     run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
                     train_idx = np.concatenate((train[run_train], aux_test))
-                    X_train = X[train_idx].get_data()
+                    X_train = X[train_idx]
                     y_train = y[train_idx]
 
                     # train_idx = np.concatenate((train, test[aux_idx]))
@@ -836,16 +836,16 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                         duration = time() - t_start
 
                         Aux_trials = X[aux_test]
-                        _, r_op = euclidean_alignment(Aux_trials.get_data())
+                        _, r_op = euclidean_alignment(Aux_trials)
                         # Use ref matrix to align test data
-                        X_t = np.matmul(r_op, Test.get_data())
+                        X_t = np.matmul(r_op, Test)
                     else:
 
                         t_start = time()
                         ftmodel = ftclf.fit(X_train, y_train)
                         duration = time() - t_start
 
-                        X_t = Test.get_data()
+                        X_t = Test
 
                     # Predict on the test set
                     score = _score(ftmodel, X_t, y_t, scorer)
@@ -943,7 +943,7 @@ def divide(list_2d):
 
 
 def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
@@ -1012,7 +1012,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             n = config.ensemble.n_clf
 
             # Use this part of the data to select the best classifiers
-            X_train = X[test[aux_run]].get_data()
+            X_train = X[test[aux_run]]
             y_train = y[test[aux_run]]
 
             if ea is not None:
@@ -1039,14 +1039,14 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             # Simulated online
             # Select required session
             test_idx = np.logical_and(test_runs, ix)
-            Test = X[test[test_idx]].get_data()
+            Test = X[test[test_idx]]
             y_t = y[test[test_idx]]
             create_dataset.y = y_t
 
             if ea is not None:
                 # Then, test with one run for ft
                 Aux_trials = X[test[aux_run]]
-                _, r_op = euclidean_alignment(Aux_trials.get_data())
+                _, r_op = euclidean_alignment(Aux_trials)
                 # Use ref matrix to align test data
                 Test = np.matmul(r_op, Test)
 
