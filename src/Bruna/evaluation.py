@@ -158,7 +158,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
              model_list: list of clf
 
     """
-    X, y, metadata = paradigm.get_data(dataset, return_epochs=True)
+    X, y, metadata = paradigm.get_data(dataset=dataset, return_epochs=True)
     # extract metadata
     groups = metadata.subject.values
     sessions = metadata.session.values
