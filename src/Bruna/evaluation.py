@@ -293,7 +293,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                     "exp": "1run"
                 }
                 results.append(res)
-            break
+        break
     results = pd.DataFrame(results)
     return results
 
