@@ -1,0 +1,20 @@
+Tensorflow not install, you could not use those pipelines
+The run_dir is /mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/shared_m2_final-BNCI2014001-alignment-exp_1-0-both
+First time running, creating folder
+The experiment name in Mlflow will be:shared_m2_final-BNCI2014001-alignment-exp_1-0-both
+Traceback (most recent call last):
+  File "/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp1.py", line 116, in <module>
+    main(args)
+  File "/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/script_moabb_exp1.py", line 77, in main
+    clf = define_clf(model, config)
+  File "/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/src/Bruna/train.py", line 52, in define_clf
+    clf.initialize()
+  File "/mnt/beegfs/home/aristimunha/anaconda3/envs/moabb/lib/python3.9/site-packages/skorch/net.py", line 888, in initialize
+    self._initialize_optimizer()
+  File "/mnt/beegfs/home/aristimunha/anaconda3/envs/moabb/lib/python3.9/site-packages/skorch/net.py", line 859, in _initialize_optimizer
+    self.initialize_optimizer()
+  File "/mnt/beegfs/home/aristimunha/anaconda3/envs/moabb/lib/python3.9/site-packages/skorch/net.py", line 625, in initialize_optimizer
+    self.optimizer_ = self.optimizer(*args, **kwargs)
+  File "/mnt/beegfs/home/aristimunha/anaconda3/envs/moabb/lib/python3.9/site-packages/torch/optim/adamw.py", line 28, in __init__
+    if not 0.0 <= lr:
+TypeError: '<=' not supported between instances of 'float' and 'str'
