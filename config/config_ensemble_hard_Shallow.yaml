@@ -13,7 +13,7 @@ train:
     experiment_name: 'ensemble_m2_hard_3'
 ensemble:
     voting: 'hard'
-    n_clf : 5
+    n_clf : 3
 model:
     type: 'ShallowFBCSPNet'
     drop_prob: 0.35
