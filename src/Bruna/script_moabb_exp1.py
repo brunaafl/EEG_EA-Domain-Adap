@@ -14,6 +14,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from moabb.utils import set_download_dir
 
+from mne.decoding import Scaler
+
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 from train import define_clf, init_model
 from evaluation import shared_model, online_shared
@@ -81,9 +83,9 @@ def main(args):
 
     pipes = {}
 
-    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
+    pipe_with_align = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
-    pipe = Pipeline([("Braindecode_dataset", create_dataset),
+    pipe = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':

@@ -11,6 +11,8 @@ from omegaconf import OmegaConf
 
 from sklearn.pipeline import Pipeline
 
+from mne.decoding import Scaler
+
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
@@ -85,9 +87,9 @@ def main(args):
 
     pipes = {}
 
-    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
+    pipe_with_align = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
-    pipe = Pipeline([("Braindecode_dataset", create_dataset),
+    pipe = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':

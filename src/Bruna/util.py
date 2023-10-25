@@ -176,7 +176,7 @@ def set_run_dir(config, args):
     Name of the experiment.
 
     """
-    output_dir = Path(config.train.run_report + "/runs/")
+    output_dir = Path(config.train.run_report + "/runs/Normalize")
     output_dir.mkdir(exist_ok=True, parents=True)
 
     experiment_name = (
