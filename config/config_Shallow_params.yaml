@@ -5,6 +5,7 @@ train:
     n_epochs: 1000
     patience: 250
     batch_size: 64
+    weight_decay: 1e-5
     valid_split: 0.2
     experiment_name: 'Shallow_hyperparam'
 model:
