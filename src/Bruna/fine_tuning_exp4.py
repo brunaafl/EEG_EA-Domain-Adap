@@ -117,7 +117,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_fine-tuning_results_{config.ft.lr}.csv")
 
 
     print("---------------------------------------")
