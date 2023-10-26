@@ -81,7 +81,7 @@ def main(args):
     group = meta.subject.values
 
     X_train, X_test, y_train, y_test, group_train, group_test = \
-        train_test_split(X.get_data(), y, group, test_size=config.train.valid_split, random_state=config.seed)
+        train_test_split(X, y, group, test_size=config.train.valid_split, random_state=config.seed)
 
     loo = LeaveOneGroupOut()
 
