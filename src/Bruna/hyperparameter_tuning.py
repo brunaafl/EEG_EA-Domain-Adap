@@ -76,7 +76,7 @@ def main(args):
     clf = clf_tuning(model, config)
 
     # Epochs array for whole dataset
-    X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=True)
+    X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=False)
 
     group = meta.subject.values
 
