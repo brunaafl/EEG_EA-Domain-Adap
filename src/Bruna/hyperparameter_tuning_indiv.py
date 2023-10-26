@@ -78,7 +78,7 @@ def main(args):
     clf = clf_tuning(model, config)
 
     # Epochs array for whole dataset
-    X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=True)
+    X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=False)
     groups = meta.subject.values
     sessions = meta.session.values
     runs = meta.run.values
@@ -97,17 +97,9 @@ def main(args):
 
     cv = LeaveOneGroupOut()
 
-    if config.model.type == 'Deep4Net':
-
-        param_grid = {
-            'optimizer__lr': [0.001, 0.000925, 0.000825, 0.000725, 0.000625, 0.000525],
-        }
-
-    elif config.model.type == 'ShallowFBCSPNet':
-
-        param_grid = {
-            'optimizer__lr': [0.00125, 0.001, 0.000925, 0.000825, 0.000725],
-        }
+    param_grid = {
+        'optimizer__lr': [0.00125, 0.001, 0.000925, 0.000825, 0.000725],
+    }
 
     params = []
     best_score = []
@@ -123,7 +115,7 @@ def main(args):
             error_score='raise'
         )
 
-        grid.fit(X[train].get_data(), y[train])
+        grid.fit(X[train], y[train])
         params.append(grid.best_params_)
         best_score.append(grid.best_score_)
 

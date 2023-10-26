@@ -9,7 +9,7 @@ train:
     experiment_name: 'DN_hyperparam'
 model:
     type: 'Deep4Net'
-    drop_prob: 0.4
+    drop_prob: 0.35
     final_conv_length: 'auto'
 dataset:
     path: '/mnt/beegfs/projects/moabb/mne_data'

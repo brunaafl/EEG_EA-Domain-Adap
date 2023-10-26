@@ -67,9 +67,9 @@ def main(args):
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
-    n_chans = X.shape[1]
-    input_window_samples = X.shape[2]
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1], return_epochs=True)
+    n_chans = X.get_data().shape[1]
+    input_window_samples = X.get_data().shape[2]
 
     ea = config.ea.batch
 
@@ -87,9 +87,9 @@ def main(args):
 
     pipes = {}
 
-    pipe_with_align = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset_with_align),
+    pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
-    pipe = Pipeline([("normalize", Scaler()), ("Braindecode_dataset", create_dataset),
+    pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':

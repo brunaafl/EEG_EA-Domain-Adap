@@ -6,9 +6,9 @@ train:
     patience: 250
     batch_size: 64
     valid_split: 0.2
-    experiment_name: 'Shallow_hyperparam'
+    experiment_name: 'EEGNet_hyperparam'
 model:
-    type: 'ShallowFBCSPNet'
+    type: 'EEGNetv4'
     drop_prob: 0.25
     final_conv_length: 'auto'
 dataset:

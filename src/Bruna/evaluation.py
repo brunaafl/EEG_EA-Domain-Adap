@@ -1021,7 +1021,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 len_run = ea
                 X_train = split_runs_EA(X_train, len_run)
 
-            X_train = Scaler(X_train)
+            #X_train = Scaler(X_train)
 
             w, idx = select_weights(X_train, y_train, clfs, n=n)
 
@@ -1033,7 +1033,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
             create_dataset = TransformaParaWindowsDataset()
 
-            eclf_pipe = Pipeline([('normalize', Scaler()), ("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])
+            eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])  # ('normalize', Scaler()),
 
             t_start = time()
             emodel = eclf_pipe.fit(X_train, y_train)
