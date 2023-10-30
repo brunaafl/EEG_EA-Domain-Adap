@@ -814,14 +814,14 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_test = test[aux_idx]
 
                     # Compute train data
-                    run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
-                    train_idx = np.concatenate((train[run_train], aux_test))
-                    X_train = X[train_idx]
-                    y_train = y[train_idx]
-
-                    # train_idx = np.concatenate((train, test[aux_idx]))
-                    # X_train = X[train_idx].get_data()
+                    # run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
+                    # train_idx = np.concatenate((train[run_train], aux_test))
+                    # X_train = X[train_idx]
                     # y_train = y[train_idx]
+
+                    train_idx = np.concatenate((train, test[aux_idx]))
+                    X_train = X[train_idx].get_data()
+                    y_train = y[train_idx]
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)

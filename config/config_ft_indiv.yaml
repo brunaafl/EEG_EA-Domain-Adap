@@ -8,14 +8,14 @@ train:
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
-    lr: 0.000825
+    lr: 0.000725
     valid_split: 0.2
-    experiment_name: 'indiv_ft_m1_725'
+    experiment_name: 'indiv_ft_m1'
 ft:
     n_epochs: 600
-    lr: 0.0000725
+    lr: 0.000125
     patience: 150
-    batch_size: 8
+    batch_size: 64
     weight_decay: 1e-5
 model:
     type: 'EEGNetv4'
