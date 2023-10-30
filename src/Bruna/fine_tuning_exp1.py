@@ -87,21 +87,21 @@ def main(args):
     if args.ea == 'alignment':
         pipes[f"{config.model.type}_EA"] = pipe_with_align
         if config.model.type == "EEGNetv4":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/EpochsFalse/shared_m1_final-{args.dataset}-alignment' \
                   '-exp_1-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/EpochsFalse/shared_m3_final-{args.dataset}-alignment' \
                   '-exp_1-0-both'
         elif config.model.type == "Deep4Net":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/EpochsFalse/shared_m2_final-{args.dataset}-alignment' \
                   '-exp_1-0-both'
     else:
         pipes[f"{config.model.type}_Without_EA"] = pipe
         if config.model.type == "EEGNetv4":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m1_final-{args.dataset}-no' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/EpochsFalse/shared_m1_final-{args.dataset}-no' \
                   '-alignment-exp_1-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m3_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/EpochsFalse/shared_m3_final-{args.dataset}-alignment' \
                   '-exp_1-0-both'
         elif config.model.type == "Deep4Net":
             run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/run/shared_m2_final-{args.dataset}-alignment' \
