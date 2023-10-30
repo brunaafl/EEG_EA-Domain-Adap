@@ -819,9 +819,12 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     #X_train = X[train_idx]
                     #y_train = y[train_idx]
 
-                    train_idx = np.concatenate((train, test[aux_idx]))
+                    train_idx = np.concatenate((train, aux_test))
                     X_train = X[train_idx]
                     y_train = y[train_idx]
+
+                    print(X_train.shape)
+                    print(len(y_train))
 
                     # Select just the required part
                     test_idx = np.logical_and(test_runs, test_subj)
