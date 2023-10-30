@@ -12,6 +12,7 @@ from omegaconf import OmegaConf
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.utils import set_download_dir
 
+from dataset import delete_trials, split_runs_EA
 from train import init_model, clf_tuning
 from util import parse_args, set_determinism, set_run_dir
 from sklearn.base import clone
@@ -77,11 +78,25 @@ def main(args):
 
     # Epochs array for whole dataset
     X, y, meta = paradigm.get_data(dataset=dataset, return_epochs=False)
+    groups = meta.subject.values
+    sessions = meta.session.values
+    runs = meta.run.values
 
-    group = meta.subject.values
+    if dataset.code == "Schirrmeister2017":
+        ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions = sessions[train_idx]
+        runs = runs[train_idx]
+
+    if args.ea == "alignment":
+        ea = config.ea.batch
+        X = split_runs_EA(X, ea)
 
     X_train, X_test, y_train, y_test, group_train, group_test = \
-        train_test_split(X, y, group, test_size=config.train.valid_split, random_state=config.seed)
+        train_test_split(X, y, groups, test_size=config.train.valid_split, random_state=config.seed)
 
     loo = LeaveOneGroupOut()
 

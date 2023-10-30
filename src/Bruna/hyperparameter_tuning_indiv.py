@@ -95,6 +95,10 @@ def main(args):
         sessions = sessions[train_idx]
         runs = runs[train_idx]
 
+    if args.ea == "alignment":
+        ea = config.ea.batch
+        X = split_runs_EA(X, ea)
+
     cv = LeaveOneGroupOut()
 
     param_grid = {
