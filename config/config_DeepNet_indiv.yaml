@@ -16,7 +16,7 @@ ft:
     weight_decay: 1e-5
     patience: 150
     lr: 0.000125
-    batch_size: 8
+    batch_size: 64
 model:
     type: 'Deep4Net'
     drop_prob: 0.35
