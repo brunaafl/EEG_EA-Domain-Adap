@@ -78,19 +78,25 @@ def main(args):
         if args.ea == 'alignment':
             ea = ea
             if config.model.type == "EEGNetv4":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m1_final-' \
                       'BNCI2014001-alignment-exp_4-0-both'
             elif config.model.type == "ShallowFBCSPNet":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m2_final' \
+                      '-BNCI2014001-alignment-exp_4-0-both'
+            elif config.model.type == "Deep4Net":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m3_final' \
                       '-BNCI2014001-alignment-exp_4-0-both'
         else:
             ea = None
             if config.model.type == "EEGNetv4":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final-' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m1_final-' \
                       'BNCI2014001-no-alignment-exp_4-0-both'
             elif config.model.type == "ShallowFBCSPNet":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final-' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m2_final-' \
                       'BNCI2014001-no-alignment-exp_4-0-both'
+            elif config.model.type == "Deep4Net":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m3_final' \
+                      '-BNCI2014001-no-alignment-exp_4-0-both'
 
     elif args.dataset == "Schirrmeister2017":
 
@@ -98,18 +104,24 @@ def main(args):
         if args.ea == 'alignment':
             ea = ea
             if config.model.type == "EEGNetv4":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m1_final' \
                       '-Schirrmeister2017-alignment-exp_4-0-both'
             elif config.model.type == "ShallowFBCSPNet":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m2_final' \
+                      '-Schirrmeister2017-alignment-exp_4-0-both'
+            elif config.model.type == "Deep4Net":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m3_final' \
                       '-Schirrmeister2017-alignment-exp_4-0-both'
         else:
             ea = None
             if config.model.type == "EEGNetv4":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m1_final' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m1_final' \
                       '-Schirrmeister2017-no-alignment-exp_4-0-both'
             elif config.model.type == "ShallowFBCSPNet":
-                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/indiv_m2_final' \
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m2_final' \
+                      '-Schirrmeister2017-no-alignment-exp_4-0-both'
+            elif config.model.type == "Deep4Net":
+                run = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/indiv_m3_final' \
                       '-Schirrmeister2017-no-alignment-exp_4-0-both'
         # Now, Online with 1 run for EA and ft
 

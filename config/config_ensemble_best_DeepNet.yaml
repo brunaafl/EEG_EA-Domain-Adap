@@ -1,0 +1,16 @@
+seed: 42
+ea:
+    batch: 24
+train:
+    num_workers: 10
+    run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
+    experiment_name: 'ensemble_m3_best'
+ensemble:
+    voting: 'hard'
+    n_clf : 1
+model:
+    type: 'Deep4Net'
+    drop_prob: 0.35
+    final_conv_length: 'auto'
+dataset:
+    path: '/mnt/beegfs/projects/moabb/mne_data'
