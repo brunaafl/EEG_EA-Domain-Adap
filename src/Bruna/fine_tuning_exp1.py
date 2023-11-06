@@ -48,7 +48,7 @@ def main(args):
     paradigm = MotorImagery_(events=events, n_classes=len(events), metric='accuracy', resample=250)
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014_001()
+        dataset = BNCI2014001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
