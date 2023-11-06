@@ -6,7 +6,7 @@ Baseline script to analyse the EEG Dataset.
 import torch
 from pathlib import Path
 
-from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
