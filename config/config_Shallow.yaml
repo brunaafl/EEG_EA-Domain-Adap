@@ -13,7 +13,7 @@ train:
     experiment_name: 'shared_m3_final'
 ft:
     n_epochs: 600
-    lr: 0.000125
+    lr: 0.000425
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
