@@ -271,7 +271,7 @@ def distance_subjects(list_mean, dataset, path):
     df = pd.DataFrame(distance, columns=dataset.subject_list, index=dataset.subject_list)
     # Plot heatmap
     sns.heatmap(data=df, cmap=sns.cubehelix_palette(as_cmap=True),
-                annot=True, annot_kws={"fontsize":3})  # sns.cubehelix_palette(as_cmap=True)
+                annot=True, annot_kws={"fontsize":6})  # sns.cubehelix_palette(as_cmap=True)
 
     fig.savefig(path / f"Mean_distance_{dataset.code}.pdf", format='pdf', dpi=300, bbox_inches='tight')
     plt.close()
