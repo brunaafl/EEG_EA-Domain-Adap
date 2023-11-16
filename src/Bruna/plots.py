@@ -293,30 +293,3 @@ def mean_group(covmats, size=24, domains=None, metric='riemann'):
             cov_batch_mean = mean_covariance(cov_batch, metric=metric)
             covmats_means.append(cov_batch_mean)
     return covmats_means
-
-
-datsets = [BNCI2014001(), Schirrmeister2017()]
-for data in datsets:
-
-    events = ["right_hand", "left_hand"]
-    channels = ["Fz", "FC3", "FCz", "FC4", "C5", "FC1", "FC2",
-                "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
-                "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
-
-    paradigm = MotorImagery_(events=events, channels=channels, n_classes=len(events), metric='accuracy', resample=250)
-    X, y, metadata = paradigm.get_data(dataset=data, return_epochs=False)
-    groups = metadata.subject.values
-    # Delete some trials
-    if data.code == "Schirrmeister2017":
-        len_ea = 24
-        train_idx = delete_trials(X, y, groups, 42, len_ea)
-        X = X[train_idx]
-        y = y[train_idx]
-        groups = groups[train_idx]
-
-    cov = covariances(X)
-
-    means_subjects = mean_group(cov, domains=groups)
-    path_plot = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/plot/distances/'
-
-    distance_subjects(means_subjects, data, Path(path_plot))
