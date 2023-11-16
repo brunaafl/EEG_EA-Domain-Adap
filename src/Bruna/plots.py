@@ -317,7 +317,6 @@ for data in datsets:
     cov = covariances(X)
 
     means_subjects = mean_group(cov, domains=groups)
-    root = Path(__file__).parent.parent
-    path_plot = root / 'plot' / 'distances'
+    path_plot = '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/plot/distances/'
 
-    distance_subjects(means_subjects, data, path_plot)
+    distance_subjects(means_subjects, data, Path(path_plot))
