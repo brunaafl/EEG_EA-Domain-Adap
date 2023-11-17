@@ -101,10 +101,10 @@ def main(args):
             run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/shared_m1_final-{args.dataset}-no' \
                   '-alignment-exp_1-0-both'
         elif config.model.type == "ShallowFBCSPNet":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/shared_m3_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/shared_m3_final-{args.dataset}-no-alignment' \
                   '-exp_1-0-both'
         elif config.model.type == "Deep4Net":
-            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/shared_m2_final-{args.dataset}-alignment' \
+            run = f'/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/runs/EpochsFalse/shared_m2_final-{args.dataset}-no-alignment' \
                   '-exp_1-0-both'
     # Now, Online with 1 run for EA and ft
     results = online_shared(dataset, paradigm, pipes, model, Path(run), config)
@@ -112,7 +112,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_fine-tuning_results_{config.ft.lr}.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_fine-tuning_{config.ft.lr}.csv")
 
     print("---------------------------------------")
 
