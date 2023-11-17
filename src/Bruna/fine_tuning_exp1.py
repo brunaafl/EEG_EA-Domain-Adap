@@ -62,9 +62,9 @@ def main(args):
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
-    n_chans = X.shape[1]
-    input_window_samples = X.shape[2]
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1],  return_epochs=True)
+    n_chans = X.get_data().shape[1]
+    input_window_samples = X.get_data().shape[2]
     ea = config.ea.batch
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
