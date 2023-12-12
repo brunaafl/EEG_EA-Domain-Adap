@@ -104,7 +104,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_0.000625_results.csv")
 
 
     print("---------------------------------------")
