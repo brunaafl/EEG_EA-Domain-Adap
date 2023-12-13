@@ -10,10 +10,10 @@ train:
     batch_size: 64
     lr: 0.000825
     valid_split: 0.2
-    experiment_name: 'shared_m3_final'
+    experiment_name: 'shared_m3_final_0.000625'
 ft:
     n_epochs: 600
-    lr: 0.000225
+    lr: 0.000625
     patience: 250
     weight_decay: 1e-5
     batch_size: 64
