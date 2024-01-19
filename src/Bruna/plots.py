@@ -1,8 +1,15 @@
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import csv
 import pandas as pd
+from pyriemann.utils.covariance import covariances
+from pyriemann.utils.distance import pairwise_distance
+
+from moabb.datasets import BNCI2014001, Schirrmeister2017
+from pyriemann.utils.mean import mean_covariance
 
 from sklearn.decomposition import PCA as sklearnPCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
@@ -15,6 +22,9 @@ from moabb.analysis.meta_analysis import (  # noqa: E501
 import matplotlib.pyplot as plt
 
 from sklearn.cluster import KMeans
+
+from paradigm import MotorImagery_
+from dataset import delete_trials
 
 
 def statistical_analysis(results1_csv, results2_csv, exp_name):
@@ -174,30 +184,6 @@ def boxplot_exp4_model_avg(results1, results2):
     plt.show()
 
 
-# Average for each subject:
-# Each column k corresponds the average of the scores obtained by testing subj k on all models
-def boxplot_exp4_subj_avg(results1, results2):
-    sns.set_theme()
-    results = pd.concat([results1, results2])
-
-    figbox, axbox = plt.subplots(figsize=(15, 5))
-
-    plt.title(f"Average test subject accuracy", fontsize=15)
-
-    axbox = sns.boxplot(data=results, y="score", x="test",
-                        hue="pipeline", ax=axbox)
-    axbox = sns.stripplot(data=results, y="score", x="test",
-                          hue="pipeline", ax=axbox, dodge=True,
-                          linewidth=1, alpha=.5)
-
-    axbox.set_ylabel("Accuracy", fontsize=14.5)
-    axbox.set_xlabel("Subjects", fontsize=14.5)
-
-    figbox.savefig(f"box_test_avg.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    plt.show()
-
-
 # Heatplot for exp4
 def heatplot(resultsEA, results, n_subj):
     # Prepare data
@@ -275,66 +261,35 @@ def heatplot(resultsEA, results, n_subj):
         fig.savefig(name, format='pdf', dpi=300, bbox_inches='tight')
 
 
-def lineplot_exp2(results1, results2, subj_list):
-    results = pd.concat([results1, results2])
+def distance_subjects(list_mean, dataset, path):
+    distance = pairwise_distance(np.array(list_mean), np.array(list_mean))
+    distance[distance < 1e-10] = 0
 
-    for subj in subj_list:
-        results_subj = results[results['subject'] == subj]
+    fig, ax = plt.subplots()
+    # distance = 1/max*distance
 
-        fig, ax = plt.subplots(figsize=(15, 5))
+    df = pd.DataFrame(distance, columns=dataset.subject_list, index=dataset.subject_list)
+    # Plot heatmap
+    sns.heatmap(data=df, cmap=sns.cubehelix_palette(as_cmap=True),
+                annot=True, annot_kws={"fontsize":6})  # sns.cubehelix_palette(as_cmap=True)
 
-        plt.title(f"Score of test subject {subj} vs size of train set", fontsize=15)
-
-        sns.lineplot(data=results_subj, x='n_train_runs', y='score', marker='+', hue='pipeline', ax=ax)
-        ax.set_ylabel("Score", fontsize=14.5)
-        ax.set_xlabel("Runs", fontsize=14.5)
-
-        fig.savefig(f"exp2_subj_{subj}.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-        plt.show()
+    fig.savefig(path / f"Mean_distance_{dataset.code}.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    plt.close()
 
 
-def barplot_exp2_avg(results1, results2, subj_list):
-    sns.set_theme()
-
-    results = pd.concat([results1, results2])
-
-    fig, ax = plt.subplots(figsize=(15, 5))
-    plt.title("Average accuracy - different training sizes", fontsize=15)
-
-    for subj in subj_list:
-        results_subj = results[results['subject'] == subj]
-
-        sns.lineplot(data=results_subj, x='n_train_runs', y='score', marker='+', hue='pipeline', ax=ax, alpha=0.15,
-                     legend=False)
-
-    sns.lineplot(data=results, x='n_train_runs', y='score', marker='+', hue='pipeline', ax=ax, alpha=1, legend=False)
-
-    ax.set_ylabel("Score", fontsize=14.5)
-    ax.set_xlabel("Runs", fontsize=14.5)
-
-    fig.savefig(f"exp2_subj_with_avg.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    plt.show()
-
-
-def line_plot_exp3_avg(results1, results2, subj_list, type_):
-    sns.set_theme()
-    results = pd.concat([results1, results2])
-
-    fig, ax = plt.subplots(figsize=(15, 5))
-
-    for subj in subj_list:
-        results_subj = results[results['subject'] == subj]
-
-        sns.lineplot(data=results_subj, x='n_test_runs', alpha=0.15, legend=False, y='score', marker='+',
-                     hue='pipeline', ax=ax)
-
-    sns.lineplot(data=results, x='n_test_runs', y='score', alpha=1, legend=False, marker='+', hue='pipeline', ax=ax)
-
-    ax.set_ylabel("Score", fontsize=14.5)
-    ax.set_xlabel("Fine-tuning runs", fontsize=14.5)
-
-    fig.savefig(f"{type_}_exp3_subj_avg.pdf", format='pdf', dpi=300, bbox_inches='tight')
-
-    plt.show()
+def mean_group(covmats, size=24, domains=None, metric='riemann'):
+    # Returns a list containing the mean of each batch/group of matrices
+    covmats_means = []
+    if domains is None:
+        m = size
+        n = covmats.shape[0]
+        for k in range(int(n / m)):
+            cov_batch = covmats[k * m:(k + 1) * m]
+            cov_batch_mean = mean_covariance(cov_batch, metric=metric)
+            covmats_means.append(cov_batch_mean)
+    else:
+        for d in np.unique(domains):
+            cov_batch = covmats[domains == d]
+            cov_batch_mean = mean_covariance(cov_batch, metric=metric)
+            covmats_means.append(cov_batch_mean)
+    return covmats_means

@@ -1,0 +1,18 @@
+seed: 42
+ea:
+    batch: 24
+train:
+    num_workers: 10
+    run_report: '/mnt/beegfs/home/aristimunha/bruna/EEG_EA-Domain-Adap/output/'
+    n_epochs: 1000
+    patience: 250
+    batch_size: 64
+    valid_split: 0.2
+    weight_decay: 1e-5
+    experiment_name: 'EEGNet_hyperparam'
+model:
+    type: 'EEGNetv4'
+    drop_prob: 0.25
+    final_conv_length: 'auto'
+dataset:
+    path: '/mnt/beegfs/projects/moabb/mne_data'
