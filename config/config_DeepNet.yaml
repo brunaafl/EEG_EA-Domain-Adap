@@ -10,12 +10,12 @@ train:
     batch_size: 64
     lr: 0.001
     valid_split: 0.2
-    experiment_name: 'shared_m2_final_0.000625'
+    experiment_name: 'shared_m2_final'
 ft:
     n_epochs: 600
     weight_decay: 1e-5
     patience: 150
-    lr: 0.000625
+    lr: 0.000425
     batch_size: 64
 model:
     type: 'Deep4Net'
