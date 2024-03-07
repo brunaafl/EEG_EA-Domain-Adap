@@ -153,6 +153,7 @@ def split_runs_EA(X, len_run):
     X_EA = np.concatenate(X_aux)
     return X_EA
 
+
 def split_runs_RA(X, len_run):
     X_aux = []
     m = len_run
@@ -163,6 +164,7 @@ def split_runs_RA(X, len_run):
         X_aux.append(run_RA)
     X_RA = np.concatenate(X_aux)
     return X_RA
+
 
 def delete_trials(X, y, subjects, seed, ea):
     subj = np.unique(subjects)
