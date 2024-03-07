@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 from numpy import any, iscomplexobj, isfinite, real
+from pyriemann.utils.covariance import covariances
 from pyriemann.utils.mean import mean_covariance
 from scipy.linalg import inv, sqrtm
 
@@ -11,12 +12,9 @@ def riemannian_alignment(data, y=None):
 
     assert len(data.shape) == 3
 
-    r = 0
-    for trial in data:
-        cov = np.cov(trial, rowvar=True)
-        r += cov
+    data = covariances(data, estimator='cov')
 
-    r = mean_covariance(r, metric='riemann')
+    r = mean_covariance(data, metric='riemann')
 
     compare = np.allclose(r, np.identity(r.shape[0]))
 
