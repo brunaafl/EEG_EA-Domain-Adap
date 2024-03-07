@@ -12,9 +12,9 @@ def riemannian_alignment(data, y=None):
 
     assert len(data.shape) == 3
 
-    data = covariances(data, estimator='cov')
+    covs = covariances(data, estimator='cov')
 
-    r = mean_covariance(data, metric='riemann')
+    r = mean_covariance(covs, metric='riemann')
 
     compare = np.allclose(r, np.identity(r.shape[0]))
 
