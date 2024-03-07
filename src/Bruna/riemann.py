@@ -2,20 +2,16 @@ import copy
 
 import numpy as np
 from numpy import any, iscomplexobj, isfinite, real
+from pyriemann.utils.mean import mean_covariance
 from scipy.linalg import inv, sqrtm
 
 
-def euclidean_alignment(data, y=None):
+def riemannian_alignment(data, y=None):
     data = copy.deepcopy(data)
 
     assert len(data.shape) == 3
 
-    r = 0
-    for trial in data:
-        cov = np.cov(trial, rowvar=True)
-        r += cov
-
-    r = r / len(data)
+    r = mean_covariance(data, metric='riemann')
 
     compare = np.allclose(r, np.identity(r.shape[0]))
 

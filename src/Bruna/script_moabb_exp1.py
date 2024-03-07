@@ -79,17 +79,22 @@ def main(args):
     clf = define_clf(model, config)
 
     create_dataset_with_align = TransformaParaWindowsDatasetEA(ea)
+    create_dataset_with_ralign = TransformaParaWindowsDatasetEA(ea, atype='riemann')
     create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
 
     pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
+    pipe_with_ralign = Pipeline([("Braindecode_dataset", create_dataset_with_ralign),
+                                ("Net", clone(clf))])
     pipe = Pipeline([("Braindecode_dataset", create_dataset),  # ("normalize", Scaler(X.info)),
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':
         pipes[f"{config.model.type}_EA"] = pipe_with_align
+    elif args.ea == 'r-alignment':
+        pipes[f"{config.model.type}_RA"] = pipe_with_ralign
     else:
         pipes[f"{config.model.type}_Without_EA"] = pipe
 
@@ -104,7 +109,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_0.000625_results.csv")
+    results.to_csv(f"{run_dir}/'Shared/{experiment_name}_results.csv")
 
 
     print("---------------------------------------")

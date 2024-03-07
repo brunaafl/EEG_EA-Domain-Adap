@@ -7,7 +7,7 @@ from numpy import unique
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
 from alignment import euclidean_alignment
-from dataset import split_runs_EA
+from dataset import split_runs_EA, split_runs_RA
 
 
 class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
@@ -52,9 +52,10 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
 
 class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
-    def __init__(self, len_run, kw_args=None):
+    def __init__(self, len_run, atype='euclid', kw_args=None):
         self.kw_args = kw_args
         self.len_run = len_run
+        self.atype = atype
 
     def fit(self, X, y=None):
         self.y = y
@@ -67,7 +68,10 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
 
         if isinstance(X, np.ndarray):
 
-            X_EA = split_runs_EA(X, self.len_run)
+            if self.atype == 'euclid':
+                X_EA = split_runs_EA(X, self.len_run)
+            else:
+                X_EA = split_runs_RA(X, self.len_run)
 
             dataset = create_from_X_y(
                 X=X_EA,
@@ -79,7 +83,10 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
 
         else:
 
-            X_EA = split_runs_EA(X.get_data(), self.len_run)
+            if self.atype == 'euclid':
+                X_EA = split_runs_EA(X.get_data(), self.len_run)
+            else:
+                X_EA = split_runs_RA(X.get_data(), self.len_run)
 
             dataset = create_from_X_y(
                 X=X_EA,

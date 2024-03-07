@@ -21,6 +21,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 from model_validation import split_train_val, split_run, split_size
 from alignment import euclidean_alignment
+from riemann import riemannian_alignment
 
 mne.set_log_level("ERROR")
 
@@ -152,6 +153,16 @@ def split_runs_EA(X, len_run):
     X_EA = np.concatenate(X_aux)
     return X_EA
 
+def split_runs_RA(X, len_run):
+    X_aux = []
+    m = len_run
+    n = X.shape[0]
+    for k in range(int(n / m)):
+        run = X[k * m:(k + 1) * m]
+        run_RA, _ = riemannian_alignment(run)
+        X_aux.append(run_RA)
+    X_RA = np.concatenate(X_aux)
+    return X_RA
 
 def delete_trials(X, y, subjects, seed, ea):
     subj = np.unique(subjects)
