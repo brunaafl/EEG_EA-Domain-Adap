@@ -88,7 +88,7 @@ def main(args):
                                 ("Net", clone(clf))])
     pipe_with_ralign = Pipeline([("Braindecode_dataset", create_dataset_with_ralign),
                                 ("Net", clone(clf))])
-    pipe = Pipeline([("Braindecode_dataset", create_dataset),  # ("normalize", Scaler(X.info)),
+    pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
     if args.ea == 'alignment':
@@ -100,7 +100,7 @@ def main(args):
 
     # Define evaluation and train
     # First, offline, zero-shot and online with 1 run for EA
-    results_ = shared_model(dataset, paradigm, pipes, run_dir, config)
+    results_ = shared_model(dataset, paradigm, pipes, run_dir, config, align=args.ea)
     # Now, Online with 1 run for EA and ft
     results_ft = online_shared(dataset, paradigm, pipes, model, run_dir, config)
 
@@ -108,8 +108,10 @@ def main(args):
 
     print(results.head())
 
+    dir_ = run_dir/'Shared'
+
     # Save results
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    results.to_csv(f"{dir_}/{experiment_name}_results.csv")
 
 
     print("---------------------------------------")

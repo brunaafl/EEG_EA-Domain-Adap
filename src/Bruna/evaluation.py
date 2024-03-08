@@ -31,6 +31,7 @@ from skorch.dataset import ValidSplit
 from pipeline import TransformaParaWindowsDatasetEA, TransformaParaWindowsDataset
 from dataset import split_runs_EA, delete_trials
 from alignment import euclidean_alignment
+from src.Bruna.riemann import riemannian_alignment
 from train import define_clf
 
 mne.set_log_level(False)
@@ -147,7 +148,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
-def shared_model(dataset, paradigm, pipes, run_dir, config):
+def shared_model(dataset, paradigm, pipes, run_dir, config, align='EA'):
     """
 
     Create one model per subject and the with the others
@@ -251,9 +252,12 @@ def shared_model(dataset, paradigm, pipes, run_dir, config):
                     # First, zero shot
                     score_zeroshot = _score(model["Net"], Test, y_t, scorer)
 
-                    # Then, test with one run for ft
+                    # Then, use the calibration run
                     Aux_trials = X[test[aux_run]]
-                    _, r_op = euclidean_alignment(Aux_trials)
+                    if align == 'alignment':
+                        _, r_op = euclidean_alignment(Aux_trials)
+                    elif align == 'r-alignment':
+                        _, r_op = riemannian_alignment(Aux_trials)
                     # Use ref matrix to align test data
                     X_t = np.matmul(r_op, Test)
                     # Compute score
@@ -814,10 +818,10 @@ def online_indiv(dataset, paradigm, pipes, nn_model, run_dir, config):
                     aux_test = test[aux_idx]
 
                     # Compute train data
-                    #run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
-                    #train_idx = np.concatenate((train[run_train], aux_test))
-                    #X_train = X[train_idx]
-                    #y_train = y[train_idx]
+                    # run_train = ftdata(runs, sessions, session, train, groups, dataset.code)
+                    # train_idx = np.concatenate((train[run_train], aux_test))
+                    # X_train = X[train_idx]
+                    # y_train = y[train_idx]
 
                     train_idx = np.concatenate((train, aux_test))
                     X_train = X[train_idx]
@@ -1021,7 +1025,7 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
                 len_run = ea
                 X_train = split_runs_EA(X_train, len_run)
 
-            #X_train = Scaler(X_train)
+            # X_train = Scaler(X_train)
 
             w, idx = select_weights(X_train, y_train, clfs, n=n)
 
@@ -1033,7 +1037,8 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
 
             create_dataset = TransformaParaWindowsDataset()
 
-            eclf_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])  # ('normalize', Scaler()),
+            eclf_pipe = Pipeline(
+                [("Braindecode_dataset", create_dataset), ("Ensemble", eclf)])  # ('normalize', Scaler()),
 
             t_start = time()
             emodel = eclf_pipe.fit(X_train, y_train)
@@ -1074,4 +1079,3 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             results.append(res)
     results = pd.DataFrame(results)
     return results
-
