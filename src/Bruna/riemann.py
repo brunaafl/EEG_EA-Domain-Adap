@@ -49,7 +49,7 @@ def riemannian_alignment(data):
 def resting_alignment(data, t_break):
 
     resting = data[:, :, t_break:]
-    data = data[:, :, t_break:]
+    data = data[:, :, :t_break]
 
     data = copy.deepcopy(data)
 
