@@ -249,9 +249,6 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
                 # If we are analyzing with EA
                 if align is not None:
 
-                    # First, zero shot
-                    score_zeroshot = _score(model["Net"], Test, y_t, scorer)
-
                     # Then, use the calibration run
                     Aux_trials = X[test[aux_run]]
                     if align == 'alignment':
