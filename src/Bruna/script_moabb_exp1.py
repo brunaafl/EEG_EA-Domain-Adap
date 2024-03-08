@@ -98,6 +98,7 @@ def main(args):
     elif args.ea == 'rest-alignment':
         dataset.interval = [2, 7.5]
         t_break = input_window_samples
+        print(t_break)
         create_dataset_with_restalign = TransformaParaWindowsDatasetEA(ea, atype='resting', tbreak=t_break)
         pipe_with_restalign = Pipeline([("Braindecode_dataset", create_dataset_with_restalign),
                                         ("Net", clone(clf))])

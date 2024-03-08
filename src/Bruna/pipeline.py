@@ -69,12 +69,16 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
 
         if isinstance(X, np.ndarray):
 
+            print(X.shape)
+
             if self.atype == 'euclid':
                 X_EA = split_runs_EA(X, self.len_run)
             elif self.atype == 'riemann':
                 X_EA = split_runs_RA(X, self.len_run)
             elif self.atype == 'resting':
                 X_EA = split_runs_RS(X, self.tbreak, self.len_run)
+
+            print(X_EA.shape)
 
             dataset = create_from_X_y(
                 X=X_EA,
