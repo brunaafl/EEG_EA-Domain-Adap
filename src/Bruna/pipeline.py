@@ -79,8 +79,8 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
             dataset = create_from_X_y(
                 X=X_EA,
                 y=y,
-                window_size_samples=X.shape[2],
-                window_stride_samples=X.shape[2],
+                window_size_samples=X_EA.shape[2],
+                window_stride_samples=X_EA.shape[2],
                 drop_last_window=False,
                 sfreq=250.0, )  # X.info["sfreq"]
 
@@ -88,14 +88,16 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
 
             if self.atype == 'euclid':
                 X_EA = split_runs_EA(X.get_data(), self.len_run)
-            else:
+            elif self.atype == 'riemann':
                 X_EA = split_runs_RA(X.get_data(), self.len_run)
+            elif self.atype == 'resting':
+                X_EA = split_runs_RS(X.get_data(), self.tbreak, self.len_run)
 
             dataset = create_from_X_y(
                 X=X_EA,
                 y=self.y,
-                window_size_samples=X.get_data().shape[2],
-                window_stride_samples=X.get_data().shape[2],
+                window_size_samples=X_EA.get_data().shape[2],
+                window_stride_samples=X_EA.get_data().shape[2],
                 drop_last_window=False,
                 sfreq=X.info["sfreq"],
             )
