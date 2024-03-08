@@ -31,7 +31,7 @@ from skorch.dataset import ValidSplit
 from pipeline import TransformaParaWindowsDatasetEA, TransformaParaWindowsDataset
 from dataset import split_runs_EA, delete_trials
 from alignment import euclidean_alignment
-from riemann import riemannian_alignment
+from riemann import riemannian_alignment, resting_alignment
 from train import define_clf
 
 mne.set_log_level(False)
@@ -148,7 +148,7 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
-def shared_model(dataset, paradigm, pipes, run_dir, config, align='EA'):
+def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
     """
 
     Create one model per subject and the with the others
@@ -247,7 +247,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align='EA'):
                 results.append(res)
 
                 # If we are analyzing with EA
-                if type(pipes[name][0]) == type(TransformaParaWindowsDatasetEA(len_run=len_run)):
+                if align is not None:
 
                     # First, zero shot
                     score_zeroshot = _score(model["Net"], Test, y_t, scorer)
@@ -258,6 +258,9 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align='EA'):
                         _, r_op = euclidean_alignment(Aux_trials)
                     elif align == 'r-alignment':
                         _, r_op = riemannian_alignment(Aux_trials)
+                    elif align == 'rest-alignment':
+                        tbreak = model['Braindecode_dataset'].tbreak
+                        _, r_op = resting_alignment(Aux_trials, tbreak)
                     # Use ref matrix to align test data
                     X_t = np.matmul(r_op, Test)
                     # Compute score

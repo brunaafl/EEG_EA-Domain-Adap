@@ -87,7 +87,7 @@ def main(args):
     pipe_with_align = Pipeline([("Braindecode_dataset", create_dataset_with_align),
                                 ("Net", clone(clf))])
     pipe_with_ralign = Pipeline([("Braindecode_dataset", create_dataset_with_ralign),
-                                ("Net", clone(clf))])
+                                 ("Net", clone(clf))])
     pipe = Pipeline([("Braindecode_dataset", create_dataset),
                      ("Net", clone(clf))])
 
@@ -95,24 +95,31 @@ def main(args):
         pipes[f"{config.model.type}_EA"] = pipe_with_align
     elif args.ea == 'r-alignment':
         pipes[f"{config.model.type}_RA"] = pipe_with_ralign
+    elif args.ea == 'rest-alignment':
+        dataset.interval = [2, 7.5]
+        t_break = input_window_samples
+        create_dataset_with_restalign = TransformaParaWindowsDatasetEA(ea, atype='resting', tbreak=t_break)
+        pipe_with_restalign = Pipeline([("Braindecode_dataset", create_dataset_with_restalign),
+                                        ("Net", clone(clf))])
+        pipes[f"{config.model.type}_RS"] = pipe_with_restalign
     else:
         pipes[f"{config.model.type}_Without_EA"] = pipe
 
     # Define evaluation and train
     # First, offline, zero-shot and online with 1 run for EA
-    results_ = shared_model(dataset, paradigm, pipes, run_dir, config, align=args.ea)
+    results = shared_model(dataset, paradigm, pipes, run_dir, config, align=args.ea)
     # Now, Online with 1 run for EA and ft
-    results_ft = online_shared(dataset, paradigm, pipes, model, run_dir, config)
+    if args.ea != 'rest-alignment':
+        results_ft = online_shared(dataset, paradigm, pipes, model, run_dir, config)
 
-    results = pd.concat([results_, results_ft])
+        results = pd.concat([results, results_ft])
 
     print(results.head())
 
-    dir_ = run_dir/'Shared'
+    dir_ = run_dir / 'Shared'
 
     # Save results
     results.to_csv(f"{dir_}/{experiment_name}_results.csv")
-
 
     print("---------------------------------------")
 

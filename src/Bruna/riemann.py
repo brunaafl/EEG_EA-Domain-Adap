@@ -8,7 +8,7 @@ from pyriemann.utils.mean import mean_covariance
 from scipy.linalg import inv, sqrtm
 
 
-def riemannian_alignment(data, y=None):
+def riemannian_alignment(data):
     data = copy.deepcopy(data)
 
     assert len(data.shape) == 3
@@ -42,6 +42,39 @@ def riemannian_alignment(data, y=None):
         print("Already aligned!")
         result = data
         r_op = r
+
+    return result, r_op
+
+
+def resting_alignment(data, t_break):
+
+    resting = data[:, :, t_break:]
+    data = data[:, :, t_break:]
+
+    data = copy.deepcopy(data)
+
+    assert len(data.shape) == 3
+
+    covs = covariances(resting, estimator='cov')
+
+    r = mean_covariance(covs, metric='riemann')
+
+    if iscomplexobj(r):
+        print("covariance matrix problem")
+    if iscomplexobj(sqrtm(r)):
+        print("covariance matrix problem sqrt")
+
+    r_op = inv(sqrtm(r))
+
+    if iscomplexobj(r_op):
+        print("WARNING! Covariance matrix was not SPD somehow. " +
+              "Can be caused by running ICA-EOG rejection, if " +
+              "not, check data!!")
+        r_op = real(r_op).astype(np.float64)
+    elif not any(isfinite(r_op)):
+        print("WARNING! Not finite values in R Matrix")
+
+    result = np.matmul(r_op, data)
 
     return result, r_op
 
@@ -110,4 +143,3 @@ def riemannian_resting_alignment(covmats, covmats_rest, size=24, dtype='covmat')
         covmats_aux.append(batch_RA)
     covmats_RA = np.concatenate(covmats_aux)
     return covmats_RA
-

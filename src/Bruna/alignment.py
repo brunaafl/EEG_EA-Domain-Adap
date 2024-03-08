@@ -5,7 +5,7 @@ from numpy import any, iscomplexobj, isfinite, real
 from scipy.linalg import inv, sqrtm
 
 
-def euclidean_alignment(data, y=None):
+def euclidean_alignment(data):
     data = copy.deepcopy(data)
 
     assert len(data.shape) == 3
