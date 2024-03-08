@@ -258,31 +258,15 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
                     elif align == 'rest-alignment':
                         tbreak = model['Braindecode_dataset'].tbreak
                         _, r_op = resting_alignment(Aux_trials, tbreak)
+                        Test = Test[:, :, :tbreak]
                     # Use ref matrix to align test data
                     X_t = np.matmul(r_op, Test)
                     # Compute score
                     score_EA = _score(model["Net"], X_t, y_t, scorer)
 
-                # Else, no changesfor zeroshot or ea
+                # Else, no changes for ea
                 else:
-                    score_zeroshot = score
                     score_EA = score
-
-                # If without alignment, scores don't change
-                res = {
-                    "time": duration,
-                    "dataset": dataset.code,
-                    "subject": subject,
-                    "session": session,
-                    "score": score_zeroshot,
-                    "type": "Online",
-                    "ft": "Without",
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                    "exp": "zero_shot"
-                }
-                results.append(res)
 
                 res = {
                     "time": duration,
