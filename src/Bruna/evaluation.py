@@ -31,7 +31,7 @@ from skorch.dataset import ValidSplit
 from pipeline import TransformaParaWindowsDatasetEA, TransformaParaWindowsDataset
 from dataset import split_runs_EA, delete_trials
 from alignment import euclidean_alignment
-from src.Bruna.riemann import riemannian_alignment
+from riemann import riemannian_alignment
 from train import define_clf
 
 mne.set_log_level(False)
