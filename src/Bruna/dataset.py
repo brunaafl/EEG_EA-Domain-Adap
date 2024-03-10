@@ -177,6 +177,17 @@ def split_runs_RS(X, tbreak, len_run):
     X_RS = np.concatenate(X_aux)
     return X_RS
 
+def split_runs_RS_v2(X, X_rest, len_run):
+    X_aux = []
+    m = len_run
+    n = X.shape[0]
+    for k in range(int(n / m)):
+        run = X[k * m:(k + 1) * m]
+        run_RS, _ = resting_alignment(run, tbreak)
+        X_aux.append(run_RS)
+    X_RS = np.concatenate(X_aux)
+    return X_RS
+
 
 def delete_trials(X, y, subjects, seed, ea):
     subj = np.unique(subjects)

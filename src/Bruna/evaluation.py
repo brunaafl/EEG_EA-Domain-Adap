@@ -148,6 +148,24 @@ class CrossCrossSubjectEvaluation(BaseEvaluation):
         return len(dataset.subject_list) > 1
 
 
+def separate_resting(X, y, subjects):
+    X_aux, X_rest = [], []
+
+    for subj in np.unique(subjects):
+        X_subj = X[subjects == subj]
+        y_subj = y[subjects == subj]
+
+        X_rest_s = X_subj[y_subj == 2]
+        X_subj = X_subj[y_subj != 2]
+
+        X_aux.append(X_subj)
+        X_rest.append(X_rest_s)
+
+    X_aux = np.concatenate(X_aux)
+
+    return X_aux, X_rest
+
+
 def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
     """
 
@@ -169,10 +187,12 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
     n_subjects = len(dataset.subject_list)
 
     scorer = get_scorer(paradigm.scoring)
+    print(np.unique(y))
 
     # encode labels
     le = LabelEncoder()
     y = le.fit_transform(y)
+    print(np.unique(y))
     # evaluation
     cv = LeaveOneGroupOut()
 
@@ -185,6 +205,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
         groups = groups[train_idx]
         sessions = sessions[train_idx]
         runs = runs[train_idx]
+        X, X_rest = delete_trials(X, y, groups)
 
     results = []
     # for each test subject
@@ -197,6 +218,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
 
             cvclf = deepcopy(clf)
             t_start = time()
+
             model = cvclf.fit(X[train], y[train])
             duration = time() - t_start
 

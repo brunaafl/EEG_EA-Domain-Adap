@@ -48,8 +48,6 @@ def main(args):
                 "C3", "C4", "Cz", "C6", "CPz", "C1", "C2",
                 "CP2", "CP1", "CP4", "CP3", "Pz", "P2", "P1", "POz"]
 
-    paradigm = MotorImagery_(events=events, channels=channels, n_classes=len(events), metric='accuracy', resample=250)
-
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
     elif args.dataset == 'Cho2017':
@@ -63,6 +61,9 @@ def main(args):
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
         paradigm = MotorImagery_(resample=250, metric='accuracy')
+
+
+    paradigm = MotorImagery_(events=events, channels=channels, n_classes=len(events), metric='accuracy', resample=250)
 
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
