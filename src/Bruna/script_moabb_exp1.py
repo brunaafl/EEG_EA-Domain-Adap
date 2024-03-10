@@ -57,6 +57,8 @@ def main(args):
     elif args.dataset == 'Lee2019_MI':
         dataset = Lee2019_MI()
     elif args.dataset == 'Schirrmeister2017':
+        if args.ea == 'rest-alignment':
+            events = ["right_hand", "left_hand", "rest"]
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
@@ -96,7 +98,8 @@ def main(args):
     elif args.ea == 'r-alignment':
         pipes[f"{config.model.type}_RA"] = pipe_with_ralign
     elif args.ea == 'rest-alignment':
-        dataset.interval = [2, 7.5]
+        if args.dataset == 'BNCI2014001':
+            dataset.interval = [2, 7.5]
         t_break = input_window_samples
         create_dataset_with_restalign = TransformaParaWindowsDatasetEA(ea, atype='resting', tbreak=t_break)
         pipe_with_restalign = Pipeline([("Braindecode_dataset", create_dataset_with_restalign),
