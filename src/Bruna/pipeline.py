@@ -74,7 +74,11 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
             elif self.atype == 'riemann':
                 X_EA = split_runs_RA(X, self.len_run)
             elif self.atype == 'resting':
-                X_EA = split_runs_RS(X, self.tbreak, self.len_run)
+                if self.tbreak is not None:
+                    X_EA = split_runs_RS(X, self.tbreak, self.len_run)
+                else:
+                    domains = self.domain
+
 
             dataset = create_from_X_y(
                 X=X_EA,
