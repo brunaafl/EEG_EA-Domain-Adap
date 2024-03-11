@@ -205,7 +205,7 @@ def shared_model(dataset, paradigm, pipes, run_dir, config, align=None):
         groups = groups[train_idx]
         sessions = sessions[train_idx]
         runs = runs[train_idx]
-        X, X_rest = delete_trials(X, y, groups)
+        X, X_rest = separate_resting(X, y, groups)
 
     results = []
     # for each test subject

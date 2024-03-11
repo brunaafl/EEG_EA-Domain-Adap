@@ -15,7 +15,9 @@ import mne
 
 from moabb.datasets import BNCI2014001, PhysionetMI
 from moabb.paradigms import LeftRightImagery
-from moabb.utils import set_download_dir
+from scipy.linalg import inv, sqrtm
+from pyriemann.utils.covariance import covariances
+from pyriemann.utils.mean import mean_covariance
 
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -177,14 +179,20 @@ def split_runs_RS(X, tbreak, len_run):
     X_RS = np.concatenate(X_aux)
     return X_RS
 
-def split_runs_RS_v2(X, X_rest, len_run):
+
+def split_runs_RS_v2(X, X_rest, domain):
     X_aux = []
-    m = len_run
-    n = X.shape[0]
-    for k in range(int(n / m)):
-        run = X[k * m:(k + 1) * m]
-        run_RS, _ = resting_alignment(run, tbreak)
-        X_aux.append(run_RS)
+    for d in np.unique(domain):
+        X_d = X[domain == d]
+        X_r = X_rest[d - 1]
+
+        cov_r = covariances(X_r, estimator='cov')
+        r = mean_covariance(cov_r, metric='riemann')
+        r_op = inv(sqrtm(r))
+
+        result_d = np.matmul(r_op, X_d)
+
+        X_aux.append(result_d)
     X_RS = np.concatenate(X_aux)
     return X_RS
 

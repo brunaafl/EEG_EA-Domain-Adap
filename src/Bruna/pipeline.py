@@ -7,7 +7,7 @@ from numpy import unique
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
 from alignment import euclidean_alignment
-from dataset import split_runs_EA, split_runs_RA, split_runs_RS
+from dataset import split_runs_EA, split_runs_RA, split_runs_RS, split_runs_RS_v2
 
 
 class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
@@ -74,10 +74,25 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
             elif self.atype == 'riemann':
                 X_EA = split_runs_RA(X, self.len_run)
             elif self.atype == 'resting':
-                if isinstance(self.tbreak, list):
-                    X_rest = X[self.tbreak == 2]
-                    X = X[self.tbreak != 2]
                 X_EA = split_runs_RS(X, self.tbreak, self.len_run)
+
+            dataset = create_from_X_y(
+                X=X_EA,
+                y=y,
+                window_size_samples=X_EA.shape[2],
+                window_stride_samples=X_EA.shape[2],
+                drop_last_window=False,
+                sfreq=250.0, )  # X.info["sfreq"]
+
+        if isinstance(X, list):
+
+            if self.atype == 'resting':
+                X_rest = X[1]
+                self.rest = X_rest
+                domain = X[2]
+                self.domain = domain
+                X = X[0]
+                X_EA = split_runs_RS_v2(X, X_rest, domain)
 
             dataset = create_from_X_y(
                 X=X_EA,
