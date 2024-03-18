@@ -135,7 +135,7 @@ def parse_args():
         type=str,
         help="select alignment",
         default="alignment",
-        choices=["alignment", "no-alignment", "r-alignment", "rest-alignment"],
+        choices=["alignment", "no-alignment", "r-alignment", "rest-alignment", "time"],
     )
         
     parser.add_argument(

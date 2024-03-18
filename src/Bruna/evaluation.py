@@ -1085,3 +1085,70 @@ def ensemble_simple_load(dataset, paradigm, run_dir, config, model, ea=None):
             results.append(res)
     results = pd.DataFrame(results)
     return results
+
+
+def test_time(dataset, paradigm, pipes, config, ):
+    """
+
+    Create one model per subject and the with the others
+
+    :param run_dir:
+    :param dataset : moabb.datasets
+    :param paradigm : moabb.paradigms
+    :param pipes : Pipeline
+    :return: results : df
+             model_list: list of clf
+
+    """
+    X, y, metadata = paradigm.get_data(dataset=dataset)  # Removing return_epochs = True
+    # extract metadata
+    groups = metadata.subject.values
+    sessions = metadata.session.values
+    runs = metadata.run.values
+    n_subjects = len(dataset.subject_list)
+
+    scorer = get_scorer(paradigm.scoring)
+    print(np.unique(y))
+
+    # encode labels
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    print(np.unique(y))
+    # evaluation
+    cv = LeaveOneGroupOut()
+
+    # Delete some trials
+    if dataset.code == "Schirrmeister2017":
+        len_ea = config.ea.batch
+        train_idx = delete_trials(X, y, groups, config.seed, len_ea)
+        X = X[train_idx]
+        y = y[train_idx]
+        groups = groups[train_idx]
+        sessions = sessions[train_idx]
+        runs = runs[train_idx]
+        X, X_rest = separate_resting(X, y, groups)
+
+    results = []
+    # for each test subject
+    for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-SharedModels"):
+
+        subject = groups[test[0]]
+
+        # iterate over each pipeline
+        for name, clf in pipes.items():
+            cvclf = deepcopy(clf)
+            t_start = time()
+            X_align = cvclf.fit(X[train], y[train])
+            duration = time() - t_start
+
+            res = {
+                "time": duration,
+                "dataset": dataset.code,
+                "subject": subject,
+                "n_samples": len(train),
+                "pipeline": name,
+            }
+            results.append(res)
+
+    results = pd.DataFrame(results)
+    return results
