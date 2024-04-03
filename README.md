@@ -1,7 +1,7 @@
 # EEG_EA-Domain-Adap
 Paper's repository
 
-This is a repository containing code for the paper titled "Analyze use of Euclidean Alignment and Domain Adaptation for Transfer Learning". The paper explores the use of Euclidean Alignment and Domain Adaptation for Transfer Learning in the context of EEG data.
+This is a repository containing code for the paper titled "A Systematic Evaluation of Euclidean Alignment with Deep Learning for EEG Decoding". The paper explores the use of Euclidean Alignment (EA) in Deep Learning and how it impacts the Electroencephalogram (EEG) decoding process and transfer learning.
 
 ## Getting Started
 
@@ -20,7 +20,9 @@ python src/Bruna/script_moabb_exp1.py --config_file config/config.yaml --alignme
 ```
 Here is a brief explanation of the command line arguments:
 
-* alignment: specifies the alignment method to use. It can be 'euclidean' or 'domain_adaptation'.
-* num_exp: specifies the number of the experiment. It can be only 'exp_1' for now.
+* alignment: specifies the alignment method to use. It can be "alignment", "no-alignment", or "r-alignment"
+* num_exp: specifies the number of the experiment. It can be "exp_1" or "exp_4"
 * dataset: specifies the dataset to use. It can be 'BNCI2014001' or 'PhysionetMI'.
 * config_file: specifies the path to the yaml config file.
+* session: could be "both", "session_T", or "session_E".
+  
